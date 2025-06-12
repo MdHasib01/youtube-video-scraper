@@ -1,13 +1,16 @@
-const express = require("express");
-const mongoose = require("mongoose");
-const cron = require("node-cron");
-const axios = require("axios");
-const OpenAI = require("openai");
-const fs = require("fs").promises;
-const path = require("path");
-const { YoutubeTranscript } = require("youtube-transcript");
-const cloudinary = require("cloudinary").v2;
-require("dotenv").config();
+import express from "express";
+import mongoose from "mongoose";
+import cron from "node-cron";
+import axios from "axios";
+import OpenAI from "openai";
+import fs from "fs/promises";
+import path from "path";
+import { YoutubeTranscript } from "youtube-transcript";
+import { BlogPost } from "./src/models/BlogPost.model.js";
+import cloudinary from "cloudinary";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -31,24 +34,6 @@ mongoose.connect(process.env.MONGODB_URI, {
 });
 
 // Blog Post Schema
-const blogPostSchema = new mongoose.Schema({
-  title: { type: String, required: true },
-  content: { type: String, required: true },
-  summary: { type: String, required: true },
-  videoId: { type: String, required: true, unique: true },
-  videoUrl: { type: String, required: true },
-  thumbnailUrl: { type: String, required: true },
-  generatedImageUrl: { type: String, default: null },
-  cloudinaryImageUrl: { type: String, default: null },
-  cloudinaryPublicId: { type: String, default: null },
-  channelName: { type: String, required: true },
-  publishedAt: { type: Date, required: true },
-  createdAt: { type: Date, default: Date.now },
-  tags: [String],
-  category: String,
-});
-
-const BlogPost = mongoose.model("BlogPost", blogPostSchema);
 
 // Configuration loader
 async function loadConfig() {
@@ -87,6 +72,7 @@ async function getChannelVideos(channelId, maxResults = 5) {
 async function getVideoTranscript(videoId) {
   try {
     const transcript = await YoutubeTranscript.fetchTranscript(videoId);
+    if (!transcript) throw new Error("No transcript available");
     const transcriptText = transcript.map((item) => item.text).join(" ");
 
     // Check if transcript is meaningful (not just music or empty)
@@ -392,6 +378,7 @@ async function processChannels() {
 }
 
 // Routes
+
 app.get("/", (req, res) => {
   res.json({
     message: "YouTube to Blog Converter API",
@@ -405,26 +392,10 @@ app.get("/", (req, res) => {
   });
 });
 
-app.get("/posts", async (req, res) => {
-  try {
-    const posts = await BlogPost.find().sort({ createdAt: -1 }).limit(20);
-    res.json(posts);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+import postRoutes from "./src/routes/post.routes.js";
 
-app.get("/posts/:id", async (req, res) => {
-  try {
-    const post = await BlogPost.findById(req.params.id);
-    if (!post) {
-      return res.status(404).json({ error: "Post not found" });
-    }
-    res.json(post);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+// Post Routes
+app.use("/api", postRoutes);
 
 app.post("/trigger-job", async (req, res) => {
   try {
@@ -480,7 +451,7 @@ let cornJob = new Date(
 ).toLocaleTimeString();
 
 // Cron job - runs every 2 minutes
-cron.schedule("*/2 * * * *", () => {
+cron.schedule("*/.2 * * * *", () => {
   console.log("Running scheduled job at:", new Date().toLocaleTimeString());
   cornJob = new Date(new Date().getTime() + 2 * 60 * 1000).toLocaleTimeString();
   processChannels();
