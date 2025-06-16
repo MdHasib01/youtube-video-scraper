@@ -9,12 +9,20 @@ import { YoutubeTranscript } from "youtube-transcript";
 import { BlogPost } from "./src/models/BlogPost.model.js";
 import cloudinary from "cloudinary";
 import dotenv from "dotenv";
+import cors from "cors";
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.use(
+  cors({
+    origin: ["http://localhost:3000"],
+    allowedHeaders: ["Authorization", "Content-Type"],
+    credentials: true,
+  })
+);
 // Initialize OpenAI
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
