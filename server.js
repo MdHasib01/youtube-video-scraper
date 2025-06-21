@@ -21,6 +21,7 @@ app.use(
     origin: [
       "http://localhost:3000",
       "https://personal-blog-ten-sigma.vercel.app",
+      "https://yochrisgray.com",
     ],
     allowedHeaders: ["Authorization", "Content-Type"],
     credentials: true,
