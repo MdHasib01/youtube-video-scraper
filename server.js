@@ -15,13 +15,12 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
 app.use(
   cors({
     origin: [
       "http://localhost:3000",
-      "https://personal-blog-ten-sigma.vercel.app",
       "https://yochrisgray.com",
+      "https://personal-blog-ten-sigma.vercel.app",
     ],
     allowedHeaders: ["Authorization", "Content-Type"],
     credentials: true,
