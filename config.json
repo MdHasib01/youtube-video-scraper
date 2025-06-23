@@ -8,7 +8,7 @@
     }
   ],
   "settings": {
-    "defaultMaxVideos": 5,
+    "defaultMaxVideos": 15,
     "processingDelay": 2000,
     "retryAttempts": 3,
     "enableImageGeneration": true,

@@ -58,9 +58,37 @@ async function loadConfig() {
 }
 
 // YouTube API functions
+// async function getChannelVideos(channelId, maxResults = 5) {
+//   try {
+//     const response = await axios.get(
+//       "https://www.googleapis.com/youtube/v3/search",
+//       {
+//         params: {
+//           key: process.env.YOUTUBE_API_KEY,
+//           channelId: channelId,
+//           part: "snippet",
+//           order: "date",
+//           maxResults: maxResults,
+//           type: "video",
+//         },
+//       }
+//     );
+//     return response.data.items;
+//   } catch (error) {
+//     console.error("Error fetching channel videos:", error);
+//     return [];
+//   }
+// }
+function parseISO8601Duration(duration) {
+  const match = duration.match(/PT(?:(\d+)M)?(?:(\d+)S)?/);
+  const minutes = parseInt(match[1] || "0");
+  const seconds = parseInt(match[2] || "0");
+  return minutes * 60 + seconds;
+}
+
 async function getChannelVideos(channelId, maxResults = 5) {
   try {
-    const response = await axios.get(
+    const searchResponse = await axios.get(
       "https://www.googleapis.com/youtube/v3/search",
       {
         params: {
@@ -73,7 +101,33 @@ async function getChannelVideos(channelId, maxResults = 5) {
         },
       }
     );
-    return response.data.items;
+
+    const videoItems = searchResponse.data.items;
+
+    const videoIds = videoItems.map((item) => item.id.videoId).join(",");
+
+    const detailsResponse = await axios.get(
+      "https://www.googleapis.com/youtube/v3/videos",
+      {
+        params: {
+          key: process.env.YOUTUBE_API_KEY,
+          id: videoIds,
+          part: "snippet,contentDetails",
+        },
+      }
+    );
+
+    const config = await loadConfig();
+
+    const filteredVideos = detailsResponse.data.items.filter((video) => {
+      if (config.settings.skipShortsVideos) {
+        const duration = parseISO8601Duration(video.contentDetails.duration);
+        return duration >= 60;
+      }
+      return true;
+    });
+
+    return filteredVideos;
   } catch (error) {
     console.error("Error fetching channel videos:", error);
     return [];
@@ -393,13 +447,13 @@ async function processChannels() {
 app.get("/", (req, res) => {
   res.json({
     message: "YouTube to Blog Converter API",
-    endpoints: {
-      "/posts": "GET - Get all blog posts",
-      "/posts/:id": "GET - Get specific blog post",
-      "/trigger-job": "POST - Manually trigger processing job",
-      "/stats": "GET - Get processing statistics",
-      "/cloudinary-test": "GET - Test Cloudinary connection",
-    },
+    // endpoints: {
+    //   "/posts": "GET - Get all blog posts",
+    //   "/posts/:id": "GET - Get specific blog post",
+    //   "/trigger-job": "POST - Manually trigger processing job",
+    //   "/stats": "GET - Get processing statistics",
+    //   "/cloudinary-test": "GET - Test Cloudinary connection",
+    // },
   });
 });
 
@@ -462,7 +516,7 @@ let cornJob = new Date(
 ).toLocaleTimeString();
 
 // Cron job - runs every 2 minutes
-cron.schedule("*/5 * * * *", () => {
+cron.schedule("*/.15 * * * *", () => {
   console.log("Running scheduled job at:", new Date().toLocaleTimeString());
   cornJob = new Date(new Date().getTime() + 2 * 60 * 1000).toLocaleTimeString();
   processChannels();
