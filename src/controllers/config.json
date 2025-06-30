@@ -1,0 +1,26 @@
+{
+  "channels": [
+    {
+      "name": "Chris Gray",
+      "id": "UClUiLf_2nJlMwXeIwBIqBlg",
+      "maxVideos": 100,
+      "description": "Escape the 9-to-5 & Build Your Own Path to Freedom"
+    }
+  ],
+  "settings": {
+    "defaultMaxVideos": 100,
+    "processingDelay": 2000,
+    "retryAttempts": 3,
+    "enableImageGeneration": true,
+    "minTranscriptLength": 100,
+    "allowDescriptionFallback": true,
+    "skipShortsVideos": true,
+    "maxVideoAge": 30
+  },
+  "transcriptSettings": {
+    "languages": ["en", "en-US", "en-GB"],
+    "fallbackToDescription": true,
+    "minDescriptionLength": 50,
+    "skipMusicVideos": true
+  }
+}

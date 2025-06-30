@@ -19,6 +19,7 @@ app.use(
   cors({
     origin: [
       "http://localhost:3000",
+      "http://localhost:3001",
       "https://yochrisgray.com",
       "https://personal-blog-ten-sigma.vercel.app",
     ],
@@ -404,9 +405,13 @@ app.get("/", (req, res) => {
 });
 
 import postRoutes from "./src/routes/post.routes.js";
+import youtubeRoutes from "./src/routes/youtube.routes.js";
 
 // Post Routes
 app.use("/api", postRoutes);
+
+// YouTube Routes
+app.use("/api/youtube", youtubeRoutes);
 
 app.post("/trigger-job", async (req, res) => {
   try {
@@ -462,10 +467,18 @@ let cornJob = new Date(
 ).toLocaleTimeString();
 
 // Cron job - runs every 2 minutes
-cron.schedule("*/5 * * * *", () => {
-  console.log("Running scheduled job at:", new Date().toLocaleTimeString());
-  cornJob = new Date(new Date().getTime() + 2 * 60 * 1000).toLocaleTimeString();
-  processChannels();
+cron.schedule("0 0 * * *", async () => {
+  try {
+    console.log("Running scheduled job at:", new Date().toLocaleTimeString());
+    cornJob = new Date(
+      new Date().getTime() + 2 * 60 * 1000
+    ).toLocaleTimeString();
+    processChannels();
+    const result = await scrapeAllChannels();
+    console.log("Scheduled scraping result:", result);
+  } catch (error) {
+    console.error("Scheduled scraping failed:", error);
+  }
 });
 
 // Error handling middleware
