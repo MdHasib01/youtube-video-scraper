@@ -21,6 +21,7 @@ app.use(
       "http://localhost:3000",
       "http://localhost:3001",
       "https://yochrisgray.com",
+      "https://yochrisgray.com/podcasts",
       "https://wwww.yochrisgray.com",
       "https://personal-blog-ten-sigma.vercel.app",
     ],
