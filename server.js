@@ -18,11 +18,9 @@ const PORT = process.env.PORT || 3000;
 app.use(
   cors({
     origin: [
+      "https://yochrisgray.com",
       "http://localhost:3000",
       "http://localhost:3001",
-      "https://yochrisgray.com",
-      "https://yochrisgray.com/podcasts",
-      "https://wwww.yochrisgray.com",
       "https://personal-blog-ten-sigma.vercel.app",
     ],
     allowedHeaders: ["Authorization", "Content-Type"],
