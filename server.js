@@ -21,6 +21,7 @@ app.use(
       "http://localhost:3000",
       "http://localhost:3001",
       "https://yochrisgray.com",
+      "https://wwww.yochrisgray.com",
       "https://personal-blog-ten-sigma.vercel.app",
     ],
     allowedHeaders: ["Authorization", "Content-Type"],
