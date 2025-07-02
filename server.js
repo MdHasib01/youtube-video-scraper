@@ -31,6 +31,12 @@ app.use(
     credentials: true,
   })
 );
+app.use((req, res, next) => {
+  if (req.get("Origin") === "https://www.yochrisgray.com") {
+    res.set("Access-Control-Allow-Origin", "https://www.yochrisgray.com");
+  }
+  next();
+});
 // Initialize OpenAI
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
