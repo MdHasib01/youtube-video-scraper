@@ -14,6 +14,9 @@ import cors from "cors";
 dotenv.config();
 
 const app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.set("trust proxy", true);
 const PORT = process.env.PORT || 3000;
 app.use(
   cors({
@@ -406,12 +409,15 @@ app.get("/", (req, res) => {
 
 import postRoutes from "./src/routes/post.routes.js";
 import youtubeRoutes from "./src/routes/youtube.routes.js";
-
+import newsletterRoutes from "./src/routes/newsletter.routes.js";
 // Post Routes
 app.use("/api", postRoutes);
 
 // YouTube Routes
 app.use("/api/youtube", youtubeRoutes);
+
+// Newsletter Routes
+app.use("/api/newsletter", newsletterRoutes);
 
 app.post("/trigger-job", async (req, res) => {
   try {
