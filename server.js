@@ -22,6 +22,7 @@ app.use(
   cors({
     origin: [
       "https://yochrisgray.com",
+      "https://www.yochrisgray.com",
       "http://localhost:3000",
       "http://localhost:3001",
       "https://personal-blog-ten-sigma.vercel.app",
