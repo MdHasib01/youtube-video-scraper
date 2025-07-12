@@ -28,6 +28,7 @@ app.use(
       "https://personal-blog-ten-sigma.vercel.app",
     ],
     allowedHeaders: ["Authorization", "Content-Type"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
   })
 );
