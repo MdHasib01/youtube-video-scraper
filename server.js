@@ -18,13 +18,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.set("trust proxy", true);
 const PORT = process.env.PORT || 3000;
-app.use(cors());
-app.use((req, res, next) => {
-  if (req.get("Origin") === "https://www.yochrisgray.com") {
-    res.set("Access-Control-Allow-Origin", "https://www.yochrisgray.com");
-  }
-  next();
-});
+app.use(
+  cors({
+    origin: true,
+  })
+);
 // Initialize OpenAI
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
