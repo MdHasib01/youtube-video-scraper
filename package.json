@@ -29,6 +29,7 @@
     "googleapis": "^150.0.1",
     "mongoose": "^8.0.3",
     "node-cron": "^3.0.3",
+    "nodemailer": "^7.0.5",
     "openai": "^4.20.1",
     "youtube-transcript": "^1.0.6"
   },

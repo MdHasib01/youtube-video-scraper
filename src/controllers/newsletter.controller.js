@@ -1,6 +1,7 @@
 // src/controllers/newsletter.controller.js
 import { Newsletter } from "../models/Newsletter.model.js";
 import { GoogleSheetsServices } from "../services/googleSheets.service.js";
+import emailService from "../utils/emailService.js";
 
 export const subscribeToNewsletter = async (req, res) => {
   try {
@@ -32,6 +33,12 @@ export const subscribeToNewsletter = async (req, res) => {
 
         // Update Google Sheets
         try {
+          res.json({
+            success: true,
+            message:
+              "Successfully subscribed to newsletter. Check your email for confirmation.",
+          });
+
           await GoogleSheetsServices.updateSubscriber(email, true);
         } catch (error) {
           console.error("Error updating Google Sheets:", error);
@@ -65,6 +72,28 @@ export const subscribeToNewsletter = async (req, res) => {
 
     // Save to Google Sheets
     try {
+      await emailService.sendEmail(
+        email,
+        "newsletter-welcome", // template name
+        {
+          email: email,
+          name: "Subscriber",
+        },
+        "Welcome to Our Newsletter!",
+        process.env.DEFAULT_FROM_EMAIL
+      );
+      await emailService.sendEmail(
+        email,
+        "notify-for-newsletter-subscriber", // template name
+        {
+          email: email,
+          timestamp: new Date().toLocaleString(),
+          date: newSubscriber.subscribedAt.toLocaleString(),
+        },
+        "New Subscription!",
+        process.env.DEFAULT_FROM_EMAIL,
+        "noreply@yochrisgray.com"
+      );
       await GoogleSheetsServices.addSubscriber({
         email: newSubscriber.email,
         subscribedAt: newSubscriber.subscribedAt,
