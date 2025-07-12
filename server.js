@@ -14,10 +14,6 @@ import cors from "cors";
 dotenv.config();
 
 const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.set("trust proxy", true);
-const PORT = process.env.PORT || 3000;
 app.use(
   cors({
     origin: [
@@ -32,6 +28,10 @@ app.use(
     credentials: true,
   })
 );
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.set("trust proxy", true);
+const PORT = process.env.PORT || 3000;
 
 // Initialize OpenAI
 const openai = new OpenAI({
