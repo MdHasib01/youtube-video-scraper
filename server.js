@@ -14,6 +14,10 @@ import cors from "cors";
 dotenv.config();
 
 const app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.set("trust proxy", true);
+const PORT = process.env.PORT || 3000;
 app.use(
   cors({
     origin: [
@@ -24,15 +28,15 @@ app.use(
       "https://personal-blog-ten-sigma.vercel.app",
     ],
     allowedHeaders: ["Authorization", "Content-Type"],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
   })
 );
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.set("trust proxy", true);
-const PORT = process.env.PORT || 3000;
-
+app.use((req, res, next) => {
+  if (req.get("Origin") === "https://www.yochrisgray.com") {
+    res.set("Access-Control-Allow-Origin", "https://www.yochrisgray.com");
+  }
+  next();
+});
 // Initialize OpenAI
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,

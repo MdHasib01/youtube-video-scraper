@@ -86,7 +86,7 @@ export const subscribeToNewsletter = async (req, res) => {
         email,
         "notify-for-newsletter-subscriber", // template name
         {
-          email: email,
+          email: "madmaxshishir47@gmail.com",
           timestamp: new Date().toLocaleString(),
           date: newSubscriber.subscribedAt.toLocaleString(),
         },
