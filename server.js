@@ -18,19 +18,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.set("trust proxy", true);
 const PORT = process.env.PORT || 3000;
-app.use(
-  cors({
-    origin: [
-      "https://yochrisgray.com",
-      "https://www.yochrisgray.com",
-      "http://localhost:3000",
-      "http://localhost:3001",
-      "https://personal-blog-ten-sigma.vercel.app",
-    ],
-    allowedHeaders: ["Authorization", "Content-Type"],
-    credentials: true,
-  })
-);
+app.use(cors());
 app.use((req, res, next) => {
   if (req.get("Origin") === "https://www.yochrisgray.com") {
     res.set("Access-Control-Allow-Origin", "https://www.yochrisgray.com");
