@@ -20,7 +20,7 @@ app.set("trust proxy", true);
 const PORT = process.env.PORT || 3000;
 app.use(
   cors({
-    origin: true,
+    origin: "*",
   })
 );
 // Initialize OpenAI
