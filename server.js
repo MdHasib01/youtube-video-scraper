@@ -20,23 +20,32 @@ app.set("trust proxy", true);
 const PORT = process.env.PORT || 3000;
 app.use(
   cors({
-    origin: [
-      "https://www.yochrisgray.com",
-      "https://yochrisgray.com",
-      "http://localhost:3000",
-      "http://localhost:3001",
-      "https://personal-blog-ten-sigma.vercel.app",
-    ],
+    origin: function (origin, callback) {
+      // Allow requests with no origin (mobile apps, etc.)
+      if (!origin) return callback(null, true);
+
+      const allowedOrigins = [
+        "https://www.yochrisgray.com",
+        "https://yochrisgray.com",
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "https://personal-blog-ten-sigma.vercel.app",
+      ];
+
+      // Check if origin is in allowed list or matches Vercel pattern
+      if (
+        allowedOrigins.includes(origin) ||
+        /^https:\/\/.*\.vercel\.app$/.test(origin)
+      ) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     allowedHeaders: ["Authorization", "Content-Type"],
     credentials: true,
   })
 );
-app.use((req, res, next) => {
-  if (req.get("Origin") === "https://www.yochrisgray.com") {
-    res.set("Access-Control-Allow-Origin", "https://www.yochrisgray.com");
-  }
-  next();
-});
 // Initialize OpenAI
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
