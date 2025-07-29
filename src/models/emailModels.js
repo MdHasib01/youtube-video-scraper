@@ -1,40 +1,6 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 // Newsletter Subscription Schema
-const newsletterSchema = new mongoose.Schema(
-  {
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-      lowercase: true,
-      trim: true,
-      validate: {
-        validator: function (v) {
-          return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-        },
-        message: "Please enter a valid email address",
-      },
-    },
-    subscribed: {
-      type: Boolean,
-      default: true,
-    },
-    subscriptionDate: {
-      type: Date,
-      default: Date.now,
-    },
-    source: {
-      type: String,
-      default: "website",
-    },
-    ipAddress: String,
-    userAgent: String,
-  },
-  {
-    timestamps: true,
-  }
-);
 
 // Contact Form Schema
 const contactSchema = new mongoose.Schema(
@@ -127,12 +93,9 @@ const emailLogSchema = new mongoose.Schema(
 );
 
 // Add indexes for better performance
-newsletterSchema.index({ email: 1 });
+
 contactSchema.index({ email: 1, createdAt: -1 });
 emailLogSchema.index({ type: 1, createdAt: -1 });
 
-module.exports = {
-  Newsletter: mongoose.model("Newsletter", newsletterSchema),
-  Contact: mongoose.model("Contact", contactSchema),
-  EmailLog: mongoose.model("EmailLog", emailLogSchema),
-};
+export const Contact = mongoose.model("Contact", contactSchema);
+export const EmailLog = mongoose.model("EmailLog", emailLogSchema);

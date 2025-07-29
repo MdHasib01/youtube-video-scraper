@@ -1,6 +1,7 @@
 // src/controllers/newsletter.controller.js
 import { Newsletter } from "../models/Newsletter.model.js";
 import { GoogleSheetsServices } from "../services/googleSheets.service.js";
+import emailController from "./email.controller.js";
 
 export const subscribeToNewsletter = async (req, res) => {
   try {
@@ -33,6 +34,7 @@ export const subscribeToNewsletter = async (req, res) => {
         // Update Google Sheets
         try {
           await GoogleSheetsServices.updateSubscriber(email, true);
+          await emailController.subscribeToNewsletter(email, "website");
         } catch (error) {
           console.error("Error updating Google Sheets:", error);
         }

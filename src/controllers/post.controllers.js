@@ -20,3 +20,48 @@ export const getPostById = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+// Post blog
+export const createPost = async (req, res) => {
+  const {
+    title,
+    content,
+    summary,
+    videoUrl,
+    cloudinaryImageUrl,
+    channelName,
+    tags,
+    category,
+  } = req.body;
+  try {
+    if (
+      !title ||
+      !content ||
+      !summary ||
+      !videoUrl ||
+      !cloudinaryImageUrl ||
+      !channelName ||
+      !tags ||
+      !category
+    ) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    const videoId = videoUrl.split("v=")[1];
+    const post = new BlogPost({
+      title,
+      content,
+      summary,
+      videoId,
+      videoUrl,
+      cloudinaryImageUrl,
+      channelName,
+      tags,
+      category,
+    });
+    await post.save();
+    res.status(201).json(post);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};

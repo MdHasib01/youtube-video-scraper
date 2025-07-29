@@ -1,6 +1,6 @@
 const express = require("express");
 const rateLimit = require("express-rate-limit");
-const emailController = require("../controllers/emailController");
+const { emailController } = require("../controllers/emailController");
 
 const router = express.Router();
 

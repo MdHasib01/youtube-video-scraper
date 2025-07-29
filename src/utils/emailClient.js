@@ -1,5 +1,5 @@
-const nodemailer = require("nodemailer");
-const { EmailLog } = require("../models/emailModels");
+import nodemailer from "nodemailer";
+import { EmailLog } from "../models/emailModels.js";
 
 class EmailClient {
   constructor() {
@@ -339,4 +339,4 @@ class EmailClient {
   }
 }
 
-module.exports = new EmailClient();
+export default new EmailClient();

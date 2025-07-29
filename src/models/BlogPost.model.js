@@ -10,7 +10,7 @@ const blogPostSchema = new mongoose.Schema({
   generatedImageUrl: { type: String, default: null },
   cloudinaryImageUrl: { type: String, default: null },
   cloudinaryPublicId: { type: String, default: null },
-  channelName: { type: String, required: true },
+  channelName: { type: String, default: "Chris Gray" },
   publishedAt: { type: Date, required: true },
   createdAt: { type: Date, default: Date.now },
   tags: [String],
