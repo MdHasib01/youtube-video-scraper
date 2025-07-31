@@ -9,6 +9,6 @@ const router = express.Router();
 
 router.get("/posts", getAllPosts);
 router.get("/posts/:id", getPostById);
-router.post("/posts", createPost);
+router.post("/post", createPost);
 
 export default router;
