@@ -65,3 +65,16 @@ export const createPost = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+//Image upload to cloudinnery
+export const uploadImage = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+    const result = await cloudinary.uploader.upload(req.file.path);
+    res.json({ imageUrl: result.secure_url, publicId: result.public_id });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};

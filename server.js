@@ -7,7 +7,6 @@ import fs from "fs/promises";
 import path from "path";
 import { YoutubeTranscript } from "youtube-transcript";
 import { BlogPost } from "./src/models/BlogPost.model.js";
-import cloudinary from "cloudinary";
 import dotenv from "dotenv";
 import cors from "cors";
 
@@ -49,13 +48,6 @@ app.use(
 // Initialize OpenAI
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
-});
-
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
 // MongoDB connection
@@ -154,35 +146,6 @@ async function getVideoDetails(videoId) {
 }
 
 // Cloudinary functions
-async function uploadImageToCloudinary(imageUrl, publicId) {
-  try {
-    console.log(`Uploading image to Cloudinary: ${publicId}`);
-
-    const result = await cloudinary.uploader.upload(imageUrl, {
-      public_id: publicId,
-      folder: "blog-images",
-      resource_type: "image",
-      transformation: [
-        {
-          width: 1200,
-          height: 630,
-          crop: "fill",
-          gravity: "center",
-          quality: "auto:good",
-        },
-      ],
-    });
-
-    console.log(`✅ Image uploaded to Cloudinary: ${result.secure_url}`);
-    return {
-      url: result.secure_url,
-      publicId: result.public_id,
-    };
-  } catch (error) {
-    console.error("Error uploading to Cloudinary:", error);
-    return null;
-  }
-}
 
 // OpenAI functions
 async function generateBlogPost(
@@ -277,7 +240,7 @@ async function generateBlogImage(title, summary, videoId) {
 
     // Upload to Cloudinary
     const publicId = `blog_${videoId}_${Date.now()}`;
-    const cloudinaryResult = await uploadImageToCloudinary(
+    const cloudinaryResult = await uploadImageUrlToCloudinary(
       generatedImageUrl,
       publicId
     );
@@ -426,6 +389,7 @@ app.get("/", (req, res) => {
 import postRoutes from "./src/routes/post.routes.js";
 import youtubeRoutes from "./src/routes/youtube.routes.js";
 import newsletterRoutes from "./src/routes/newsletter.routes.js";
+import { uploadImageUrlToCloudinary } from "./src/services/cloudinary.service.js";
 // Post Routes
 app.use("/api", postRoutes);
 
@@ -464,23 +428,6 @@ app.get("/stats", async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
-  }
-});
-
-// Test Cloudinary connection
-app.get("/cloudinary-test", async (req, res) => {
-  try {
-    const result = await cloudinary.api.ping();
-    res.json({
-      message: "Cloudinary connection successful",
-      cloudName: process.env.CLOUDINARY_CLOUD_NAME,
-      status: result.status,
-    });
-  } catch (error) {
-    res.status(500).json({
-      error: "Cloudinary connection failed",
-      details: error.message,
-    });
   }
 });
 
