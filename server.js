@@ -389,9 +389,13 @@ app.get("/", (req, res) => {
 import postRoutes from "./src/routes/post.routes.js";
 import youtubeRoutes from "./src/routes/youtube.routes.js";
 import newsletterRoutes from "./src/routes/newsletter.routes.js";
+import aiRoutes from "./src/routes/aicontent.routes.js";
 import { uploadImageUrlToCloudinary } from "./src/services/cloudinary.service.js";
 // Post Routes
 app.use("/api", postRoutes);
+
+//ai routes
+app.use("/api", aiRoutes);
 
 // YouTube Routes
 app.use("/api/youtube", youtubeRoutes);
