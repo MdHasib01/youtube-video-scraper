@@ -1,4 +1,5 @@
 import { BlogPost } from "../models/BlogPost.model.js";
+import { uploadImageFileToCloudinary } from "../services/cloudinary.service.js";
 
 export const getAllPosts = async (req, res) => {
   try {
@@ -23,29 +24,26 @@ export const getPostById = async (req, res) => {
 
 // Post blog
 export const createPost = async (req, res) => {
-  const {
-    title,
-    content,
-    summary,
-    videoUrl,
-    cloudinaryImageUrl,
-    channelName,
-    tags,
-    category,
-  } = req.body;
+  const { title, content, summary, videoUrl, channelName, tags, category } =
+    req.body;
+  const imagePath = req.file?.path;
+  console.log(imagePath);
   try {
     if (
       !title ||
       !content ||
       !summary ||
       !videoUrl ||
-      !cloudinaryImageUrl ||
       !channelName ||
       !tags ||
       !category
     ) {
       return res.status(400).json({ error: "Missing required fields" });
     }
+
+    const imageUrl = imagePath
+      ? await uploadImageFileToCloudinary(imagePath)
+      : null;
 
     const videoId = videoUrl.split("v=")[1];
     const post = new BlogPost({
@@ -54,26 +52,13 @@ export const createPost = async (req, res) => {
       summary,
       videoId,
       videoUrl,
-      cloudinaryImageUrl,
+      cloudinaryImageUrl: imageUrl?.url || null,
       channelName,
       tags,
       category,
     });
     await post.save();
     res.status(201).json(post);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
-//Image upload to cloudinnery
-export const uploadImage = async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: "No file uploaded" });
-    }
-    const result = await cloudinary.uploader.upload(req.file.path);
-    res.json({ imageUrl: result.secure_url, publicId: result.public_id });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
