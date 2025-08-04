@@ -60,7 +60,7 @@ export const createPost = async (req, res) => {
       summary,
       videoId,
       videoUrl,
-      cloudinaryImageUrl: uploadedImageUrl?.url || imageUrl,
+      cloudinaryImageUrl: imageUrl || uploadedImageUrl?.url || null,
       channelName,
       tags,
       category,
