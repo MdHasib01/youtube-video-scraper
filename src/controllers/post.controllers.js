@@ -37,15 +37,7 @@ export const createPost = async (req, res) => {
   const imagePath = req.file?.path;
   console.log(imagePath);
   try {
-    if (
-      !title ||
-      !content ||
-      !summary ||
-      !videoUrl ||
-      !channelName ||
-      !tags ||
-      !category
-    ) {
+    if (!title || !content || !summary || !tags || !category) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
