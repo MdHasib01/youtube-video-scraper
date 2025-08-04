@@ -24,8 +24,16 @@ export const getPostById = async (req, res) => {
 
 // Post blog
 export const createPost = async (req, res) => {
-  const { title, content, summary, videoUrl, channelName, tags, category } =
-    req.body;
+  const {
+    title,
+    content,
+    summary,
+    videoUrl,
+    channelName,
+    tags,
+    category,
+    imageUrl,
+  } = req.body;
   const imagePath = req.file?.path;
   console.log(imagePath);
   try {
@@ -41,7 +49,7 @@ export const createPost = async (req, res) => {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    const imageUrl = imagePath
+    const uploadedImageUrl = imagePath
       ? await uploadImageFileToCloudinary(imagePath)
       : null;
 
@@ -52,7 +60,7 @@ export const createPost = async (req, res) => {
       summary,
       videoId,
       videoUrl,
-      cloudinaryImageUrl: imageUrl?.url || null,
+      cloudinaryImageUrl: uploadedImageUrl?.url || imageUrl,
       channelName,
       tags,
       category,
