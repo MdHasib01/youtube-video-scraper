@@ -45,7 +45,7 @@ export const createPost = async (req, res) => {
       ? await uploadImageFileToCloudinary(imagePath)
       : null;
 
-    const videoId = videoUrl.split("v=")[1];
+    const videoId = videoUrl.split("v=")[1] || null;
     const post = new BlogPost({
       title,
       content,
