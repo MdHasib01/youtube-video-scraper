@@ -9,10 +9,12 @@ import { YoutubeTranscript } from "youtube-transcript";
 import { BlogPost } from "./src/models/BlogPost.model.js";
 import dotenv from "dotenv";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 
 dotenv.config();
 
 const app = express();
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.set("trust proxy", true);
@@ -390,6 +392,7 @@ import postRoutes from "./src/routes/post.routes.js";
 import youtubeRoutes from "./src/routes/youtube.routes.js";
 import newsletterRoutes from "./src/routes/newsletter.routes.js";
 import aiRoutes from "./src/routes/aicontent.routes.js";
+import userRoutes from "./src/routes/user.routes.js";
 import { uploadImageUrlToCloudinary } from "./src/services/cloudinary.service.js";
 // Post Routes
 app.use("/api", postRoutes);
@@ -402,6 +405,9 @@ app.use("/api/youtube", youtubeRoutes);
 
 // Newsletter Routes
 app.use("/api/newsletter", newsletterRoutes);
+
+// User Route
+app.use("/api/user", userRoutes);
 
 app.post("/trigger-job", async (req, res) => {
   try {
