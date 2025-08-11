@@ -1,0 +1,63 @@
+export const featuredPodcastData = {
+  videos: [
+    {
+      _id: "686225d23b40f5c5c54b6f1c",
+      videoId: "OjdI7Aoa-Os",
+      __v: 0,
+      channelId: "UClUiLf_2nJlMwXeIwBIqBlg",
+      channelName: "Chris Gray",
+      description:
+        "I Started a Newsletter Business… Here’s What Happened!  I’m diving into a brand-new business, and I’ll be sharing the entire journey: the wins, the struggles, and everything in between. In this first update, I break down my process, key decisions, and some unexpected challenges along the way.  If you’ve ever thought about starting your own newsletter business or just want to see what it really takes, this is for you.  🔔 Hit that subscribe button for weekly updates, and drop a comment if you’re building something too!  👉 Join the journey:  https://linktr.ee/yochrisgray",
+      duration: "",
+      publishedAt: "2025-04-04T19:49:29.000Z",
+      scrapedAt: "2025-06-30T05:51:14.984Z",
+      thumbnail: "https://img.youtube.com/vi/6Ce8ZH00h1E/maxresdefault.jpg",
+      title: "How To Create a Newsletter: Week 1",
+      url: "https://www.youtube.com/watch?v=OjdI7Aoa-Os",
+    },
+    {
+      _id: "686225d23b40f5c5c54b6f1c",
+      videoId: "AcGYpVdUqto",
+      __v: 0,
+      channelId: "UClUiLf_2nJlMwXeIwBIqBlg",
+      channelName: "Chris Gray",
+      description:
+        "It’s Week 2... and Things Got Interesting 👀  Building a newsletter business in public means showing up, even when things don’t go as planned. This week? Let’s just say I tested a strategy that might be smarter than it looks... or maybe not.  I’m talking list growth, platform changes, and one move that had me sweating. But the results? Surprising.  If you're building an audience, growing an email list, or just trying to get better at this game...tune in. This one has some lessons you’ll want to hear.  💬 Got your own wins or Ls this week? Drop them in the comments. Let’s swap notes.  Weekly breakdowns. Real growth. Zero fluff. 🔔Subscribe so you don’t miss the next move.",
+      duration: "",
+      publishedAt: "2025-04-09T19:49:29.000Z",
+      scrapedAt: "2025-06-30T05:51:14.984Z",
+      thumbnail: "https://img.youtube.com/vi/6Ce8ZH00h1E/maxresdefault.jpg",
+      title: "How To Create a Newsletter: Week 2",
+      url: "https://www.youtube.com/watch?v=AcGYpVdUqto",
+    },
+    {
+      _id: "686225d23b40f5c5c54b6f1c",
+      videoId: "XAmLAFqWyBo",
+      __v: 0,
+      channelId: "UClUiLf_2nJlMwXeIwBIqBlg",
+      channelName: "Chris Gray",
+      description:
+        "🔔This Week Got Real... Some Wins, Some Faceplants 🫣  I promised to share everything about building this newsletter business: the good, the bad, and the “what was I thinking?” This week? We hit all three.  I tested something new that flopped hard... Tried something else that quietly changed the game... And found something in the data that’s got me rethinking the whole strategy.  If you're building a list, launching a product, or just trying to figure out what actually works online...this one's for you.  I want your take on this: • Have you tried any of these moves? • What’s worked (or flopped) in your world? Drop it in the comments. Let’s figure it out together.  Weekly behind-the-scenes. No fluff. Real-time growth. 🔔Hit subscribe to ride along.  👉 Join the journey:  https://linktr.ee/yochrisgray",
+      duration: "",
+      publishedAt: "2025-04-16T19:49:29.000Z",
+      scrapedAt: "2025-06-30T05:51:14.984Z",
+      thumbnail: "https://img.youtube.com/vi/6Ce8ZH00h1E/maxresdefault.jpg",
+      title: "How To Create a Newsletter: Week 3",
+      url: "https://www.youtube.com/watch?v=XAmLAFqWyBo",
+    },
+  ],
+  pagination: {
+    currentPage: 1,
+    totalPages: 2,
+    totalVideos: 33,
+    hasNext: true,
+    hasPrev: false,
+    limit: 20,
+  },
+  filters: {
+    search: "",
+    channel: "",
+    sortBy: "publishedAt",
+    order: "desc",
+  },
+};

@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  featuredPodcast,
   getAllVideos,
   getVideoStats,
   triggerScraping,
@@ -7,13 +8,9 @@ import {
 
 const router = express.Router();
 
-// GET /api/youtube/scrape - Manual trigger for scraping (optional)
 router.get("/scrape", triggerScraping);
-
-// GET /api/youtube/videos - Get all videos with pagination and search
 router.get("/videos", getAllVideos);
-
-// GET /api/youtube/stats - Get basic statistics
 router.get("/stats", getVideoStats);
+router.get("/featured-podcasts", featuredPodcast);
 
 export default router;

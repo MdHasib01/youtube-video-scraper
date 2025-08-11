@@ -2,6 +2,7 @@ import axios from "axios";
 import * as cheerio from "cheerio";
 import mongoose from "mongoose";
 import fs from "fs/promises";
+import { featuredPodcastData } from "../utils/data.js";
 
 // Video Schema
 const videoSchema = new mongoose.Schema({
@@ -639,6 +640,14 @@ export const triggerScraping = async (req, res) => {
     res.json(result);
   } catch (error) {
     logWithTimestamp("❌ Error triggering scraping:", error.message);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const featuredPodcast = async (req, res) => {
+  try {
+    res.json(featuredPodcastData);
+  } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
