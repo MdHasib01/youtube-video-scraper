@@ -9,7 +9,7 @@ import { upload } from "../middlewares/multer.middleware.js";
 import isAuthenticated from "../middlewares/isAuthenticated.js";
 const router = express.Router();
 
-router.get("/posts", isAuthenticated, getAllPosts);
+router.get("/posts", getAllPosts);
 router.get("/posts/:id", getPostById);
 router.delete("/posts/:id", deletePost);
 router.post("/post", upload.single("image"), createPost);
