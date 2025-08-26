@@ -14,8 +14,8 @@
     }
   ],
   "settings": {
-    "defaultMaxVideos": 100,
-    "processingDelay": 2000,
+    "defaultMaxVideos": 500,
+    "processingDelay": 1000,
     "retryAttempts": 3,
     "enableImageGeneration": true,
     "minTranscriptLength": 100,

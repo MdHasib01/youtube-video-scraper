@@ -128,25 +128,34 @@ function parseDuration(duration) {
   }
 }
 
-// Check if video is a short (less than 60 seconds)
+// Check if video is a short (less than 3 minutes = 180 seconds)
 function isShortVideo(duration) {
   if (!duration) return false;
 
-  // If duration is already in seconds
+  // If duration is already in seconds (from RSS feed)
   if (/^\d+$/.test(duration)) {
-    return parseInt(duration) < 60;
+    const durationInSeconds = parseInt(duration);
+    logWithTimestamp(`🔍 Checking duration: ${durationInSeconds} seconds`);
+    return durationInSeconds < 180; // 3 minutes = 180 seconds
   }
 
-  // Otherwise, parse ISO8601 PT format
+  // If duration is in ISO8601 PT format (PT1M30S)
   const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
-  if (!match) return false;
+  if (!match) {
+    logWithTimestamp(`⚠️ Could not parse duration format: ${duration}`);
+    return false;
+  }
 
   const hours = parseInt(match[1] || 0);
   const minutes = parseInt(match[2] || 0);
   const seconds = parseInt(match[3] || 0);
 
   const totalSeconds = hours * 3600 + minutes * 60 + seconds;
-  return totalSeconds < 180;
+  logWithTimestamp(
+    `🔍 Parsed duration: ${hours}h ${minutes}m ${seconds}s = ${totalSeconds} total seconds`
+  );
+
+  return totalSeconds < 180; // 3 minutes = 180 seconds
 }
 
 // Scrape videos from RSS feed for a channel
@@ -176,6 +185,7 @@ async function scrapeChannelFromRSS(channelConfig, settings) {
     logWithTimestamp(`📋 Found ${entries.length} entries in RSS feed`);
 
     const videos = [];
+    let skippedShorts = 0;
     const maxVideos =
       channelConfig.maxVideos || settings.defaultMaxVideos || 500;
     logWithTimestamp(`📊 Processing up to ${maxVideos} videos per channel`);
@@ -197,13 +207,19 @@ async function scrapeChannelFromRSS(channelConfig, settings) {
         const title = $entry.find("title").text();
         const published = $entry.find("published").text();
         const description = $entry.find("media\\:description").text() || "";
-        const duration = $entry.find("yt\\:duration").attr("seconds") || "";
+
+        // Extract duration from RSS feed
+        let duration = "";
+        const durationElement = $entry.find("yt\\:duration");
+        if (durationElement.length > 0) {
+          duration = durationElement.attr("seconds") || "";
+        }
 
         logWithTimestamp(`📝 Video data extracted:`, {
           videoId,
           title: title.substring(0, 50) + (title.length > 50 ? "..." : ""),
           published,
-          duration,
+          duration: duration + " seconds",
           hasDescription: !!description,
         });
 
@@ -225,13 +241,24 @@ async function scrapeChannelFromRSS(channelConfig, settings) {
           return;
         }
 
-        // Skip shorts if configured
-        if (settings.skipShortsVideos) {
+        // Skip shorts if configured (videos under 3 minutes)
+        if (settings.skipShortsVideos && duration) {
+          logWithTimestamp(
+            `🔍 Checking if video is short: ${duration} seconds`
+          );
           if (isShortVideo(duration)) {
+            skippedShorts++;
             logWithTimestamp(
-              `🩳 Skipping short video: ${title.substring(0, 50)}...`
+              `🩳 Skipping short video (${duration}s): ${title.substring(
+                0,
+                50
+              )}...`
             );
             return;
+          } else {
+            logWithTimestamp(
+              `✅ Video passed duration check: ${duration} seconds`
+            );
           }
         }
 
@@ -264,7 +291,7 @@ async function scrapeChannelFromRSS(channelConfig, settings) {
     });
 
     logWithTimestamp(
-      `📊 Channel processing completed. Total videos to save: ${videos.length}`
+      `📊 Channel processing completed. Total videos to save: ${videos.length}, Skipped shorts: ${skippedShorts}`
     );
     return videos;
   } catch (error) {
@@ -283,9 +310,38 @@ async function scrapeChannelFromRSS(channelConfig, settings) {
   }
 }
 
-// Enhanced video saving function
-async function saveVideoToDatabase(video) {
+// Enhanced video saving function with additional shorts check
+async function saveVideoToDatabase(video, settings = {}) {
   try {
+    // Additional safety check for shorts before saving
+    if (settings.skipShortsVideos && video.duration) {
+      const durationParts = video.duration.split(":");
+      let totalSeconds = 0;
+
+      if (durationParts.length === 2) {
+        // Format: "M:SS"
+        totalSeconds =
+          parseInt(durationParts[0]) * 60 + parseInt(durationParts[1]);
+      } else if (durationParts.length === 3) {
+        // Format: "H:MM:SS"
+        totalSeconds =
+          parseInt(durationParts[0]) * 3600 +
+          parseInt(durationParts[1]) * 60 +
+          parseInt(durationParts[2]);
+      }
+
+      if (totalSeconds > 0 && totalSeconds < 180) {
+        // 3 minutes = 180 seconds
+        logWithTimestamp(
+          `🩳 Safety check: Skipping short video in save function (${totalSeconds}s): ${video.title.substring(
+            0,
+            50
+          )}...`
+        );
+        return { success: false, error: "Video is too short", isShort: true };
+      }
+    }
+
     logWithTimestamp(
       `💾 Attempting to save video: ${video.title.substring(0, 50)}...`
     );
@@ -374,6 +430,7 @@ export const scrapeAllChannels = async () => {
     let totalNew = 0;
     let totalUpdated = 0;
     let totalErrors = 0;
+    let totalSkippedShorts = 0;
     const results = [];
 
     for (let i = 0; i < config.channels.length; i++) {
@@ -399,6 +456,7 @@ export const scrapeAllChannels = async () => {
         let newCount = 0;
         let updatedCount = 0;
         let errorCount = 0;
+        let skippedShortsCount = 0;
 
         for (let j = 0; j < videos.length; j++) {
           const video = videos[j];
@@ -408,7 +466,7 @@ export const scrapeAllChannels = async () => {
             }`
           );
 
-          const saveResult = await saveVideoToDatabase(video);
+          const saveResult = await saveVideoToDatabase(video, config.settings);
 
           if (saveResult.success) {
             savedCount++;
@@ -417,6 +475,16 @@ export const scrapeAllChannels = async () => {
             } else {
               updatedCount++;
             }
+          } else if (saveResult.isShort) {
+            // Don't count shorts as errors, just log them
+            skippedShortsCount++;
+            totalSkippedShorts++;
+            logWithTimestamp(
+              `🩳 Skipped short video in save: ${video.title.substring(
+                0,
+                50
+              )}...`
+            );
           } else {
             errorCount++;
             totalErrors++;
@@ -433,6 +501,7 @@ export const scrapeAllChannels = async () => {
           savedVideos: savedCount,
           newVideos: newCount,
           updatedVideos: updatedCount,
+          skippedShorts: skippedShortsCount,
           errorCount: errorCount,
         };
 
@@ -470,6 +539,7 @@ export const scrapeAllChannels = async () => {
       totalScraped,
       totalNew,
       totalUpdated,
+      totalSkippedShorts,
       totalErrors,
       results,
       timestamp: new Date(),
