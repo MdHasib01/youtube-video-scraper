@@ -129,7 +129,6 @@ function parseDuration(duration) {
 }
 
 // Check if video is a short (less than 60 seconds)
-// Check if video is a short (less than 60 seconds)
 function isShortVideo(duration) {
   if (!duration) return false;
 
@@ -147,7 +146,7 @@ function isShortVideo(duration) {
   const seconds = parseInt(match[3] || 0);
 
   const totalSeconds = hours * 3600 + minutes * 60 + seconds;
-  return totalSeconds < 60;
+  return totalSeconds < 180;
 }
 
 // Scrape videos from RSS feed for a channel
