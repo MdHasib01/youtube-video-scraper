@@ -21,7 +21,7 @@
     "minTranscriptLength": 100,
     "allowDescriptionFallback": true,
     "skipShortsVideos": true,
-    "maxVideoAge": 30
+    "maxVideoAge": 3000
   },
   "transcriptSettings": {
     "languages": ["en", "en-US", "en-GB"],

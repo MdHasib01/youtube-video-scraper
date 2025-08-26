@@ -129,9 +129,16 @@ function parseDuration(duration) {
 }
 
 // Check if video is a short (less than 60 seconds)
+// Check if video is a short (less than 60 seconds)
 function isShortVideo(duration) {
   if (!duration) return false;
 
+  // If duration is already in seconds
+  if (/^\d+$/.test(duration)) {
+    return parseInt(duration) < 60;
+  }
+
+  // Otherwise, parse ISO8601 PT format
   const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
   if (!match) return false;
 
@@ -221,20 +228,11 @@ async function scrapeChannelFromRSS(channelConfig, settings) {
 
         // Skip shorts if configured
         if (settings.skipShortsVideos) {
-          const durationElement = $entry.find("yt\\:duration");
-          if (durationElement.length > 0) {
-            const durationSeconds = parseInt(
-              durationElement.attr("seconds") || "0"
+          if (isShortVideo(duration)) {
+            logWithTimestamp(
+              `🩳 Skipping short video: ${title.substring(0, 50)}...`
             );
-            if (durationSeconds < 60) {
-              logWithTimestamp(
-                `🩳 Skipping short video (${durationSeconds}s): ${title.substring(
-                  0,
-                  50
-                )}...`
-              );
-              return;
-            }
+            return;
           }
         }
 
