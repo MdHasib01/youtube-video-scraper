@@ -3,7 +3,7 @@ import { EmailLog } from "../models/emailModels.js";
 
 class EmailClient {
   constructor() {
-    this.transporter = nodemailer.createTransporter({
+    this.transporter = nodemailer.createTransport({
       host: process.env.CLOUDFLARE_SMTP_HOST,
       port: parseInt(process.env.CLOUDFLARE_SMTP_PORT),
       secure: false, // true for 465, false for other ports
@@ -19,9 +19,9 @@ class EmailClient {
     // Verify connection configuration
     this.transporter.verify((error, success) => {
       if (error) {
-        console.error("❌ Email transporter verification failed:", error);
+        console.error(" Email transporter verification failed:", error);
       } else {
-        console.log("✅ Email server is ready to send messages");
+        console.log(" Email server is ready to send messages");
       }
     });
   }
