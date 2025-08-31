@@ -41,13 +41,24 @@ export const loginUser = async (req, res) => {
   const token = jwt.sign({ userId: user._id, email: user.email }, "secret", {
     expiresIn: "7d",
   });
-  res.cookie("token", token, {
-    httpOnly: true,
-    httpOnly: true,
-    secure: false,
-    sameSite: "lax",
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-  });
+  if (process.env.NODE_ENV === "production") {
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+      domain: ".yochrisgray.com",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+  } else {
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+  }
   res.json({ message: "User logged in successfully" });
 };
 
