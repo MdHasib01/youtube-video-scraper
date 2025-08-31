@@ -3,7 +3,7 @@ import { uploadImageFileToCloudinary } from "../services/cloudinary.service.js";
 
 export const getAllPosts = async (req, res) => {
   try {
-    const posts = await BlogPost.find().sort({ createdAt: -1 }).limit(20);
+    const posts = await BlogPost.find().sort({ createdAt: -1 });
     res.json(posts);
   } catch (error) {
     res.status(500).json({ error: error.message });
