@@ -108,54 +108,35 @@ function isVideoTooOld(publishedDate, maxVideoAge) {
   }
 }
 
-// Parse duration from RSS (PT format)
-function parseDuration(duration) {
-  if (!duration) return "";
+async function fetchDurationFromWatchPage(videoId) {
+  try {
+    const url = `https://www.youtube.com/watch?v=${videoId}`;
+    const res = await axios.get(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0",
+      },
+    });
 
-  const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
-  if (!match) return "";
+    const html = res.data;
 
-  const hours = parseInt(match[1] || 0);
-  const minutes = parseInt(match[2] || 0);
-  const seconds = parseInt(match[3] || 0);
-
-  if (hours > 0) {
-    return `${hours}:${minutes.toString().padStart(2, "0")}:${seconds
-      .toString()
-      .padStart(2, "0")}`;
-  } else {
-    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+    // Regex for "lengthSeconds":"123"
+    const match = html.match(/"lengthSeconds":"(\d+)"/);
+    if (match && match[1]) {
+      return parseInt(match[1], 10); // seconds
+    }
+  } catch (err) {
+    logWithTimestamp(
+      `⚠️ Failed to fetch duration for ${videoId}: ${err.message}`
+    );
   }
+  return null;
 }
 
-// Check if video is a short (less than 3 minutes = 180 seconds)
-function isShortVideo(duration) {
-  if (!duration) return false;
-
-  // If duration is already in seconds (from RSS feed)
-  if (/^\d+$/.test(duration)) {
-    const durationInSeconds = parseInt(duration);
-    logWithTimestamp(`🔍 Checking duration: ${durationInSeconds} seconds`);
-    return durationInSeconds < 180; // 3 minutes = 180 seconds
-  }
-
-  // If duration is in ISO8601 PT format (PT1M30S)
-  const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
-  if (!match) {
-    logWithTimestamp(`⚠️ Could not parse duration format: ${duration}`);
-    return false;
-  }
-
-  const hours = parseInt(match[1] || 0);
-  const minutes = parseInt(match[2] || 0);
-  const seconds = parseInt(match[3] || 0);
-
-  const totalSeconds = hours * 3600 + minutes * 60 + seconds;
-  logWithTimestamp(
-    `🔍 Parsed duration: ${hours}h ${minutes}m ${seconds}s = ${totalSeconds} total seconds`
-  );
-
-  return totalSeconds < 180; // 3 minutes = 180 seconds
+function isShortVideo(durationSeconds) {
+  if (!durationSeconds || isNaN(durationSeconds)) return false;
+  const totalSeconds = parseInt(durationSeconds);
+  logWithTimestamp(`🔍 Checking duration: ${totalSeconds} seconds`);
+  return totalSeconds < 180;
 }
 
 // Scrape videos from RSS feed for a channel
@@ -188,19 +169,10 @@ async function scrapeChannelFromRSS(channelConfig, settings) {
     let skippedShorts = 0;
     const maxVideos =
       channelConfig.maxVideos || settings.defaultMaxVideos || 500;
-    logWithTimestamp(`📊 Processing up to ${maxVideos} videos per channel`);
 
     $("entry").each((index, element) => {
       try {
-        logWithTimestamp(`🔄 Processing entry ${index + 1}/${entries.length}`);
-
-        // Limit videos per channel
-        if (index >= maxVideos) {
-          logWithTimestamp(
-            `🛑 Reached maximum videos limit (${maxVideos}), stopping`
-          );
-          return false;
-        }
+        if (index >= maxVideos) return false;
 
         const $entry = $(element);
         const videoId = $entry.find("yt\\:videoId").text();
@@ -208,57 +180,40 @@ async function scrapeChannelFromRSS(channelConfig, settings) {
         const published = $entry.find("published").text();
         const description = $entry.find("media\\:description").text() || "";
 
-        // Extract duration from RSS feed
-        let duration = "";
-        const durationElement = $entry.find("yt\\:duration");
-        if (durationElement.length > 0) {
-          duration = durationElement.attr("seconds") || "";
+        // ✅ Extract duration from media:content
+        let durationSeconds = "";
+        const mediaContent = $entry.find("media\\:content");
+        if (mediaContent.length > 0) {
+          durationSeconds = mediaContent.attr("duration") || "";
         }
 
         logWithTimestamp(`📝 Video data extracted:`, {
           videoId,
           title: title.substring(0, 50) + (title.length > 50 ? "..." : ""),
           published,
-          duration: duration + " seconds",
-          hasDescription: !!description,
+          duration: durationSeconds ? `${durationSeconds} seconds` : "N/A",
         });
 
-        if (!videoId || !title) {
-          logWithTimestamp(
-            `⚠️ Skipping entry ${index + 1}: Missing videoId or title`
-          );
-          return;
-        }
+        if (!videoId || !title) return;
 
-        // Check if video is too old
+        // Skip old videos
         if (
           settings.maxVideoAge &&
           isVideoTooOld(published, settings.maxVideoAge)
-        ) {
-          logWithTimestamp(
-            `🕒 Skipping old video: ${title.substring(0, 50)}...`
-          );
+        )
           return;
-        }
 
-        // Skip shorts if configured (videos under 3 minutes)
-        if (settings.skipShortsVideos && duration) {
-          logWithTimestamp(
-            `🔍 Checking if video is short: ${duration} seconds`
-          );
-          if (isShortVideo(duration)) {
+        // Skip shorts
+        if (settings.skipShortsVideos && durationSeconds) {
+          if (isShortVideo(durationSeconds)) {
             skippedShorts++;
             logWithTimestamp(
-              `🩳 Skipping short video (${duration}s): ${title.substring(
+              `🩳 Skipping short video (${durationSeconds}s): ${title.substring(
                 0,
                 50
               )}...`
             );
             return;
-          } else {
-            logWithTimestamp(
-              `✅ Video passed duration check: ${duration} seconds`
-            );
           }
         }
 
@@ -271,17 +226,14 @@ async function scrapeChannelFromRSS(channelConfig, settings) {
           channelId: channelConfig.id,
           description,
           publishedAt: new Date(published),
-          duration: duration
-            ? `${Math.floor(duration / 60)}:${(duration % 60)
+          duration: durationSeconds
+            ? `${Math.floor(durationSeconds / 60)}:${(durationSeconds % 60)
                 .toString()
                 .padStart(2, "0")}`
             : "",
         };
 
         videos.push(videoData);
-        logWithTimestamp(
-          `✅ Video added to queue: ${title.substring(0, 50)}...`
-        );
       } catch (entryError) {
         logWithTimestamp(
           `❌ Error processing entry ${index + 1}:`,
@@ -299,13 +251,6 @@ async function scrapeChannelFromRSS(channelConfig, settings) {
       `❌ Error scraping channel ${channelConfig.name}:`,
       error.message
     );
-    if (error.response) {
-      logWithTimestamp(`📡 HTTP Response details:`, {
-        status: error.response.status,
-        statusText: error.response.statusText,
-        headers: error.response.headers,
-      });
-    }
     return [];
   }
 }
