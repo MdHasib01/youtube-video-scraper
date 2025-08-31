@@ -68,3 +68,8 @@ export const checkValidUser = async (req, res) => {
     res.status(401).json({ error: error.message });
   }
 };
+
+export const logoutUser = async (req, res) => {
+  res.clearCookie("token");
+  res.json({ message: "User logged out successfully" });
+};
