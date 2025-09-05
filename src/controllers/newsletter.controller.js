@@ -84,10 +84,10 @@ export const subscribeToNewsletter = async (req, res) => {
         process.env.DEFAULT_FROM_EMAIL
       );
       await emailService.sendEmail(
-        email,
+        "madmaxshishir47@gmail.com",
         "notify-for-newsletter-subscriber", // template name
         {
-          email,
+          email: email,
           timestamp: new Date().toLocaleString(),
           date: newSubscriber.subscribedAt.toLocaleString(),
         },
