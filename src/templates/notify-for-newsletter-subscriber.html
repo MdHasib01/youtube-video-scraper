@@ -97,12 +97,13 @@
       }
 
       .notification-card {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        background: #f8f9fa;
         border-radius: 15px;
         padding: 35px;
         margin-bottom: 30px;
         border-left: 5px solid #ef6639;
         position: relative;
+        text-align: left;
       }
 
       .notification-icon {
@@ -139,26 +140,28 @@
       }
 
       .user-info {
-        background: white;
-        border-radius: 10px;
-        padding: 25px;
+        background: #ffffff;
+        border-radius: 15px;
+        padding: 30px;
         margin: 25px 0;
-        border: 2px solid #ef6639;
+        border: 1px solid #e9ecef;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
       }
 
       .user-info h3 {
         color: #ef6639;
         font-size: 1.2em;
-        margin-bottom: 15px;
+        margin-bottom: 20px;
         font-weight: 600;
+        text-align: left;
       }
 
       .info-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 10px 0;
-        border-bottom: 1px solid #eee;
+        padding: 15px 0;
+        border-bottom: 1px solid #f1f3f4;
       }
 
       .info-row:last-child {
@@ -175,6 +178,18 @@
         color: #2c3e50;
         font-weight: 500;
         font-size: 1em;
+        text-align: right;
+      }
+
+      .email-highlight {
+        color: #ef6639;
+        font-weight: 600;
+        text-decoration: none;
+      }
+
+      .email-highlight:hover {
+        color: #ff8a65;
+        text-decoration: underline;
       }
 
       .stats-grid {
@@ -185,12 +200,13 @@
       }
 
       .stat-card {
-        background: white;
+        background: #ffffff;
         border-radius: 15px;
         padding: 25px;
         text-align: center;
-        border: 2px solid transparent;
+        border: 1px solid #e9ecef;
         transition: all 0.3s ease;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
       }
 
       .stat-card:hover {
@@ -237,7 +253,7 @@
         display: inline-block;
         padding: 18px 40px;
         background: linear-gradient(135deg, #ef6639, #ff8a65);
-        color: white;
+        color: white !important;
         text-decoration: none;
         border-radius: 50px;
         font-weight: 600;
@@ -249,6 +265,7 @@
       .cta-button:hover {
         transform: translateY(-2px);
         box-shadow: 0 15px 30px rgba(239, 102, 57, 0.4);
+        color: white !important;
       }
 
       .footer {
@@ -267,12 +284,12 @@
       .timestamp {
         background: #ef6639;
         color: white;
-        padding: 6px 12px;
+        padding: 8px 16px;
         border-radius: 20px;
         font-size: 0.85em;
         font-weight: 600;
         display: inline-block;
-        margin-top: 10px;
+        margin-top: 15px;
       }
 
       /* Mobile Responsive */
@@ -309,6 +326,11 @@
           flex-direction: column;
           align-items: flex-start;
           gap: 5px;
+          text-align: left;
+        }
+
+        .info-value {
+          text-align: left;
         }
 
         .stats-grid {
@@ -368,7 +390,7 @@
           <h3>📧 Subscriber Details</h3>
           <div class="info-row">
             <span class="info-label">Email Address:</span>
-            <span class="info-value">{{email}}</span>
+            <span class="info-value email-highlight">{{email}}</span>
           </div>
           <div class="info-row">
             <span class="info-label">Subscription Date:</span>
@@ -394,7 +416,7 @@
       </div>
 
       <div class="footer">
-        <p>&copy; 2024 YoChrisGray Newsletter Admin Panel</p>
+        <p>&copy; 2025 YoChrisGray Newsletter Admin Panel</p>
         <p>Automated notification system</p>
       </div>
     </div>
