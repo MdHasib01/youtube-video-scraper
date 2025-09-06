@@ -20,15 +20,26 @@ class EmailService {
     });
   }
 
-  async sendPlainEmail(to, subject, text, from = null, cc = null, bcc = null) {
+  async sendEmail(
+    to,
+    templateName,
+    templateData = {},
+    subject,
+    from = null,
+    cc = null,
+    bcc = null
+  ) {
     try {
+      console.log("Sending email...");
+
+      const htmlContent = await this.loadTemplate(templateName, templateData);
+
       const mailOptions = {
         from: from || process.env.DEFAULT_FROM_EMAIL,
         to: to,
         subject: subject,
-        text: text,
+        html: htmlContent,
       };
-
       if (cc) {
         mailOptions.cc = cc;
       }
@@ -38,11 +49,11 @@ class EmailService {
       }
 
       const result = await this.transporter.sendMail(mailOptions);
-      console.log("Plain email sent successfully:", result.messageId);
+      console.log("Email sent successfully:", result.messageId);
       return { success: true, messageId: result.messageId };
     } catch (error) {
-      console.error("Error sending plain email:", error);
-      throw new Error(`Failed to send plain email: ${error.message}`);
+      console.error("Error sending email:", error);
+      throw new Error(`Failed to send email: ${error.message}`);
     }
   }
 

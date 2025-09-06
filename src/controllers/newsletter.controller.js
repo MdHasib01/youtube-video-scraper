@@ -83,7 +83,7 @@ export const subscribeToNewsletter = async (req, res) => {
         process.env.DEFAULT_FROM_EMAIL
       );
       await emailService.sendEmail(
-        "md.hasibuzzaman001@gmail.com",
+        "chris@redpalm.us",
         "notify-for-newsletter-subscriber", // template name
         {
           email: email,
@@ -92,8 +92,8 @@ export const subscribeToNewsletter = async (req, res) => {
         },
         "New Subscription!",
         process.env.DEFAULT_FROM_EMAIL,
-        "fmsalimreza1988@gmail.com",
-        "md.hasibuzzaman28@gmail.com"
+        "marisol@redpalm.us",
+        "madmaxshishir47@gmail.com "
       );
       await GoogleSheetsServices.addSubscriber({
         email: newSubscriber.email,
