@@ -20,7 +20,14 @@ class EmailService {
     });
   }
 
-  async sendEmail(to, templateName, templateData = {}, subject, from = null) {
+  async sendEmail(
+    to,
+    templateName,
+    templateData = {},
+    subject,
+    from = null,
+    bcc = null
+  ) {
     try {
       console.log("Sending email...");
 
@@ -32,6 +39,9 @@ class EmailService {
         subject: subject,
         html: htmlContent,
       };
+      if (bcc) {
+        mailOptions.bcc = bcc;
+      }
 
       const result = await this.transporter.sendMail(mailOptions);
       console.log("Email sent successfully:", result.messageId);
