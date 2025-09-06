@@ -35,8 +35,7 @@ export const subscribeToNewsletter = async (req, res) => {
         try {
           res.json({
             success: true,
-            message:
-              "Successfully subscribed to newsletter. Check your email for confirmation.",
+            message: "Subscribed to newsletter successfully!",
           });
 
           await GoogleSheetsServices.updateSubscriber(email, true);
@@ -47,7 +46,7 @@ export const subscribeToNewsletter = async (req, res) => {
 
         return res.status(200).json({
           success: true,
-          message: "Welcome back! Your subscription has been reactivated.",
+          message: "Subscribed to newsletter successfully!",
           data: {
             email: existingSubscriber.email,
             subscribedAt: existingSubscriber.subscribedAt,
@@ -57,7 +56,7 @@ export const subscribeToNewsletter = async (req, res) => {
 
       return res.status(409).json({
         success: false,
-        message: "Email is already subscribed to our newsletter",
+        message: "Already subscribed to our newsletter",
       });
     }
 
