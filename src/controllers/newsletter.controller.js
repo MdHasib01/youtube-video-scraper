@@ -139,7 +139,87 @@ export const subscribeToNewsletter = async (req, res) => {
     });
   }
 };
+export const sendContactForm = async (req, res) => {
+  try {
+    const { name, email, subject, message } = req.body;
 
+    // Validate required fields
+    if (!name || !email || !subject || !message) {
+      return res.status(400).json({
+        success: false,
+        message: "All fields are required (name, email, subject, message)",
+      });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a valid email address",
+      });
+    }
+
+    // Get user IP address
+    const ipAddress =
+      req.ip || req.connection.remoteAddress || req.socket.remoteAddress;
+
+    // Get current timestamp
+    const timestamp = new Date().toLocaleString();
+
+    try {
+      // Send notification email to your noreply address
+      await emailService.sendEmail(
+        "madmaxshishir47@gmail.com", // recipient
+        "contact-form-notification", // template name
+        {
+          name: name,
+          email: email,
+          subject: subject,
+          message: message,
+          timestamp: timestamp,
+          ipAddress: ipAddress,
+        },
+        `New Contact Form Submission: ${subject}`, // email subject
+        process.env.DEFAULT_FROM_EMAIL,
+        "madmaxshishir47@gmail.com "
+      );
+
+      res.status(200).json({
+        success: true,
+        message:
+          "Your message has been sent successfully! We'll get back to you soon.",
+        data: {
+          name: name,
+          email: email,
+          subject: subject,
+          submittedAt: timestamp,
+        },
+      });
+    } catch (emailError) {
+      console.error("Error sending contact form email:", emailError);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to send your message. Please try again later.",
+      });
+    }
+  } catch (error) {
+    console.error("Contact form submission error:", error);
+
+    // Handle validation errors
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Internal server error. Please try again later.",
+    });
+  }
+};
 export const unsubscribeFromNewsletter = async (req, res) => {
   try {
     const { email } = req.body;

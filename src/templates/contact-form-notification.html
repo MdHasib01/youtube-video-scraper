@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>New Contact Form Submission</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Oxygen, Ubuntu, sans-serif;
+        background-color: #f8f9fa;
+        color: #333333;
+        line-height: 1.6;
+      }
+
+      .email-container {
+        max-width: 600px;
+        margin: 20px auto;
+        background-color: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+      }
+
+      .header {
+        background: linear-gradient(135deg, #ff8c00, #ff6b00);
+        padding: 30px 20px;
+        text-align: center;
+        color: white;
+      }
+
+      .header h1 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 600;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .header p {
+        margin: 8px 0 0 0;
+        opacity: 0.9;
+        font-size: 14px;
+      }
+
+      .content {
+        padding: 30px;
+      }
+
+      .info-section {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 25px;
+        border-left: 4px solid #ff8c00;
+      }
+
+      .info-row {
+        display: flex;
+        margin-bottom: 15px;
+        align-items: flex-start;
+      }
+
+      .info-row:last-child {
+        margin-bottom: 0;
+      }
+
+      .info-label {
+        font-weight: 600;
+        color: #555555;
+        min-width: 90px;
+        font-size: 14px;
+        margin-right: 15px;
+        flex-shrink: 0;
+      }
+
+      .info-value {
+        color: #333333;
+        flex: 1;
+        font-size: 14px;
+        word-break: break-word;
+      }
+
+      .message-section {
+        background-color: #ffffff;
+        border: 2px solid #ff8c00;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 25px;
+      }
+
+      .message-label {
+        font-weight: 600;
+        color: #ff8c00;
+        font-size: 16px;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .message-content {
+        color: #333333;
+        line-height: 1.7;
+        font-size: 15px;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+      }
+
+      .metadata {
+        background-color: #f1f3f4;
+        border-radius: 6px;
+        padding: 15px;
+        font-size: 12px;
+        color: #666666;
+      }
+
+      .metadata-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 5px;
+      }
+
+      .metadata-row:last-child {
+        margin-bottom: 0;
+      }
+
+      .footer {
+        background-color: #f8f9fa;
+        padding: 20px;
+        text-align: center;
+        border-top: 1px solid #e9ecef;
+      }
+
+      .footer p {
+        margin: 0;
+        font-size: 12px;
+        color: #666666;
+      }
+
+      .website-link {
+        color: #ff8c00;
+        text-decoration: none;
+        font-weight: 500;
+      }
+
+      .website-link:hover {
+        text-decoration: underline;
+      }
+
+      @media only screen and (max-width: 600px) {
+        .email-container {
+          margin: 10px;
+          border-radius: 8px;
+        }
+
+        .header {
+          padding: 25px 15px;
+        }
+
+        .content {
+          padding: 20px 15px;
+        }
+
+        .info-row {
+          flex-direction: column;
+        }
+
+        .info-label {
+          margin-bottom: 5px;
+          margin-right: 0;
+        }
+
+        .metadata-row {
+          flex-direction: column;
+          gap: 2px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="email-container">
+      <!-- Header -->
+      <div class="header">
+        <h1>New Contact Form Submission</h1>
+        <p>From Chris Gray Website Contact Form</p>
+      </div>
+
+      <!-- Content -->
+      <div class="content">
+        <!-- Contact Information -->
+        <div class="info-section">
+          <div class="info-row">
+            <span class="info-label">Name:</span>
+            <span class="info-value">{{name}}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Email:</span>
+            <span class="info-value">{{email}}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Subject:</span>
+            <span class="info-value">{{subject}}</span>
+          </div>
+        </div>
+
+        <!-- Message -->
+        <div class="message-section">
+          <span class="message-label">Message:</span>
+          <div class="message-content">{{message}}</div>
+        </div>
+
+        <!-- Metadata -->
+        <div class="metadata">
+          <div class="metadata-row">
+            <span><strong>Submitted:</strong> {{timestamp}}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        <p>
+          This message was sent from your website contact form at
+          <a href="https://yochrisgray.com" class="website-link"
+            >yochrisgray.com</a
+          >
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

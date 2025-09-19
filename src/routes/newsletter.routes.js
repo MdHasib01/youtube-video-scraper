@@ -4,6 +4,7 @@ import {
   subscribeToNewsletter,
   unsubscribeFromNewsletter,
   getNewsletterStats,
+  sendContactForm,
 } from "../controllers/newsletter.controller.js";
 import { GoogleSheetsServices } from "../services/googleSheets.service.js";
 
@@ -14,6 +15,7 @@ router.use(express.json());
 
 // Subscribe to newsletter
 router.post("/subscribe", subscribeToNewsletter);
+router.post("/contact-us", sendContactForm);
 
 // Unsubscribe from newsletter
 router.post("/unsubscribe", unsubscribeFromNewsletter);

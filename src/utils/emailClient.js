@@ -88,7 +88,20 @@ class EmailClient {
       metadata: { userEmail: email },
     });
   }
-
+  // Send contact form notification to admin
+  async sendContactNotification(contactData) {
+    const html = this.getContactNotificationTemplate(contactData);
+    return await this.sendEmail({
+      to: "noreplay@yochrisgray.com",
+      subject: `New Contact Form Submission - ${contactData.subject}`,
+      html: html,
+      type: "contact_notification",
+      metadata: {
+        userEmail: contactData.email,
+        userName: contactData.name,
+      },
+    });
+  }
   async sendNewsletterAdminNotification(email, userInfo = {}) {
     const html = this.getNewsletterAdminTemplate(email, userInfo);
     return await this.sendEmail({
@@ -113,6 +126,206 @@ class EmailClient {
 
   stripHtml(html) {
     return html.replace(/<[^>]*>/g, "");
+  }
+
+  // Add this template method to your email client class
+
+  getContactNotificationTemplate(contactData) {
+    const { name, email, subject, message, ipAddress, userAgent, timestamp } =
+      contactData;
+
+    return `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>New Contact Form Submission</title>
+      <style>
+        body {
+          margin: 0;
+          padding: 0;
+          background-color: #f5f5f5;
+          font-family: 'Arial', sans-serif;
+          line-height: 1.6;
+          color: #333;
+        }
+        .container {
+          max-width: 600px;
+          margin: 20px auto;
+          background-color: #ffffff;
+          border-radius: 10px;
+          overflow: hidden;
+          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+          background: linear-gradient(135deg, #ff6b35, #ff8c42);
+          padding: 30px 20px;
+          text-align: center;
+          color: white;
+        }
+        .header h1 {
+          margin: 0;
+          font-size: 28px;
+          font-weight: 700;
+        }
+        .header p {
+          margin: 8px 0 0 0;
+          font-size: 16px;
+          opacity: 0.9;
+        }
+        .content {
+          padding: 40px 30px;
+        }
+        .form-field {
+          margin-bottom: 25px;
+          padding: 20px;
+          background-color: #fafafa;
+          border-radius: 8px;
+          border-left: 4px solid #ff6b35;
+        }
+        .field-label {
+          font-weight: 700;
+          color: #ff6b35;
+          text-transform: uppercase;
+          font-size: 12px;
+          letter-spacing: 1px;
+          margin-bottom: 8px;
+          display: block;
+        }
+        .field-value {
+          font-size: 16px;
+          color: #333;
+          word-wrap: break-word;
+        }
+        .message-field {
+          background-color: #fff;
+          border: 2px solid #ff6b35;
+          border-radius: 8px;
+          padding: 20px;
+          margin-top: 20px;
+        }
+        .message-field .field-value {
+          white-space: pre-wrap;
+          line-height: 1.7;
+        }
+        .metadata {
+          margin-top: 30px;
+          padding: 20px;
+          background-color: #f8f9fa;
+          border-radius: 8px;
+          border: 1px solid #e9ecef;
+        }
+        .metadata h3 {
+          margin-top: 0;
+          color: #666;
+          font-size: 14px;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+        }
+        .metadata-item {
+          display: flex;
+          justify-content: space-between;
+          padding: 5px 0;
+          border-bottom: 1px solid #e9ecef;
+        }
+        .metadata-item:last-child {
+          border-bottom: none;
+        }
+        .metadata-label {
+          font-weight: 600;
+          color: #666;
+          font-size: 13px;
+        }
+        .metadata-value {
+          color: #333;
+          font-size: 13px;
+          text-align: right;
+          max-width: 250px;
+          word-break: break-all;
+        }
+        .footer {
+          background-color: #2c3e50;
+          color: #ecf0f1;
+          padding: 20px 30px;
+          text-align: center;
+          font-size: 14px;
+        }
+        .footer a {
+          color: #ff6b35;
+          text-decoration: none;
+        }
+        .priority-badge {
+          display: inline-block;
+          background-color: #ff6b35;
+          color: white;
+          padding: 4px 12px;
+          border-radius: 20px;
+          font-size: 12px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          margin-bottom: 20px;
+        }
+        @media only screen and (max-width: 600px) {
+          .container {
+            margin: 10px;
+            border-radius: 5px;
+          }
+          .content {
+            padding: 20px 15px;
+          }
+          .header {
+            padding: 20px 15px;
+          }
+          .form-field {
+            padding: 15px;
+          }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>✉️ New Contact Form Submission</h1>
+          <p>From Chris Gray website contact form</p>
+        </div>
+        
+        <div class="content">
+          <div class="priority-badge">New Message</div>
+          
+          <div class="form-field">
+            <span class="field-label">👤 Full Name</span>
+            <div class="field-value">${name}</div>
+          </div>
+          
+          <div class="form-field">
+            <span class="field-label">📧 Email Address</span>
+            <div class="field-value">
+              <a href="mailto:${email}" style="color: #ff6b35; text-decoration: none;">${email}</a>
+            </div>
+          </div>
+          
+          <div class="form-field">
+            <span class="field-label">📋 Subject</span>
+            <div class="field-value">${subject}</div>
+          </div>
+          
+          <div class="message-field">
+            <span class="field-label">💬 Message</span>
+            <div class="field-value">${message}</div>
+          </div>
+          
+          
+        
+        <div class="footer">
+          <p>This email was automatically generated from your website's contact form.</p>
+          <p>Visit <a href="https://yochrisgray.com">yochrisgray.com</a> to manage your website settings.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
   }
 
   getNewsletterWelcomeTemplate(email) {

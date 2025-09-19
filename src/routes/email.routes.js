@@ -47,6 +47,11 @@ router.post(
   emailController.subscribeToNewsletter
 );
 router.post(
+  "/contact/submit",
+  emailRateLimit,
+  emailController.submitContactForm
+);
+router.post(
   "/newsletter/unsubscribe",
   emailRateLimit,
   emailController.unsubscribeFromNewsletter
