@@ -170,7 +170,7 @@ export const sendContactForm = async (req, res) => {
     try {
       // Send notification email to your noreply address
       await emailService.sendEmail(
-        "madmaxshishir47@gmail.com", // recipient
+        "chris@redpalm.us", // recipient
         "contact-form-notification", // template name
         {
           name: name,
