@@ -182,6 +182,7 @@ export const sendContactForm = async (req, res) => {
         },
         `New Contact Form Submission: ${subject}`, // email subject
         process.env.DEFAULT_FROM_EMAIL,
+        "marisol@redpalm.us",
         "madmaxshishir47@gmail.com "
       );
 
