@@ -72,16 +72,16 @@ export const subscribeToNewsletter = async (req, res) => {
 
     // Save to Google Sheets
     try {
-      await emailService.sendEmail(
-        email,
-        "newsletter-welcome", // template name
-        {
-          email: email,
-          name: "Subscriber",
-        },
-        "Welcome to Our Newsletter!",
-        process.env.DEFAULT_FROM_EMAIL
-      );
+      // await emailService.sendEmail(
+      //   email,
+      //   "newsletter-welcome", // template name
+      //   {
+      //     email: email,
+      //     name: "Subscriber",
+      //   },
+      //   "Welcome to Our Newsletter!",
+      //   process.env.DEFAULT_FROM_EMAIL
+      // );
       await emailService.sendEmail(
         "chris@redpalm.us",
         "notify-for-newsletter-subscriber", // template name
