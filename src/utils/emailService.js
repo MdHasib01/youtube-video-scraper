@@ -6,17 +6,28 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const isSsl = true;
+const host = process.env.SMTP_HOST || "smtp.zoho.com";
 class EmailService {
   constructor() {
     console.log("Initializing email service...");
     this.transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT) || 587,
-      secure: false,
+      host,
+      port: isSsl ? 465 : 587,
+      secure: isSsl,
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
       },
+      requireTLS: !isSsl,
+      pool: true,
+      maxConnections: 2,
+      maxMessages: 40,
+      rateDelta: 60 * 1000,
+      rateLimit: 30,
+      connectionTimeout: 30_000,
+      greetingTimeout: 20_000,
+      socketTimeout: 60_000,
     });
   }
 
