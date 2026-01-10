@@ -5,8 +5,11 @@ import {
   unsubscribeFromNewsletter,
   getNewsletterStats,
   sendContactForm,
+  getAllSubscribers,
+  deleteSubscriber,
 } from "../controllers/newsletter.controller.js";
 import { GoogleSheetsServices } from "../services/googleSheets.service.js";
+import isAuthenticated from "../middlewares/isAuthenticated.js";
 
 const router = express.Router();
 
@@ -53,5 +56,11 @@ router.get("/sheets-data", async (req, res) => {
     });
   }
 });
+
+// Get all subscribers (protected route)
+router.get("/subscribers", isAuthenticated, getAllSubscribers);
+
+// Delete subscriber by ID (protected route)
+router.delete("/subscriber/:id", isAuthenticated, deleteSubscriber);
 
 export default router;

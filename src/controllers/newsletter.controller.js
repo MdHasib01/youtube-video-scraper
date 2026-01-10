@@ -300,3 +300,56 @@ export const getNewsletterStats = async (req, res) => {
     });
   }
 };
+
+export const getAllSubscribers = async (req, res) => {
+  try {
+    const subscribers = await Newsletter.find().sort({ subscribedAt: -1 });
+    res.status(200).json({
+      success: true,
+      data: subscribers,
+    });
+  } catch (error) {
+    console.error("Error fetching subscribers:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+export const deleteSubscriber = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const subscriber = await Newsletter.findById(id);
+
+    if (!subscriber) {
+      return res.status(404).json({
+        success: false,
+        message: "Subscriber not found",
+      });
+    }
+
+    await Newsletter.findByIdAndDelete(id);
+
+    // Also try to update Google Sheets if possible
+    try {
+      // Note: GoogleSheetsServices.updateSubscriber uses email, so we use that.
+      // However, the current implementation of updateSubscriber only toggles active status.
+      // Since we are deleting, we might just want to leave it or implement a delete in sheet too.
+      // For now, let's just delete from DB as requested.
+    } catch (sheetError) {
+      console.error("Error updating Google Sheets on delete:", sheetError);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Subscriber deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting subscriber:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
