@@ -340,7 +340,6 @@ Theme Ideas:
       n: 1,
       size,
       quality,
-      response_format: "url",
     });
 
     const generatedImage = response.data?.[0];
