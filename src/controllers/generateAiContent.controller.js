@@ -275,12 +275,7 @@ export const generateAiSummary = async (req, res) => {
 
 export const generateAiImage = async (req, res) => {
   try {
-    const {
-      title,
-      style = "professional",
-      size = "1024x1024",
-      quality = "standard",
-    } = req.body;
+    const { title, style = "professional", size = "1024x1024" } = req.body;
 
     if (!title) {
       return res.status(400).json({
@@ -325,7 +320,7 @@ Theme Ideas:
 - Entrepreneurial success
 `;
 
-    const validSizes = ["1024x1024", "1792x1024", "1024x1792"];
+    const validSizes = ["256x256", "512x512", "1024x1024"];
 
     if (!validSizes.includes(size)) {
       return res.status(400).json({
@@ -335,11 +330,10 @@ Theme Ideas:
     }
 
     const response = await openai.images.generate({
-      model: "dall-e-3",
+      model: "dall-e-2",
       prompt: imagePrompt,
       n: 1,
       size,
-      quality,
     });
 
     const generatedImage = response.data?.[0];
@@ -378,8 +372,7 @@ Theme Ideas:
       metadata: {
         style,
         size,
-        quality,
-        model: "dall-e-3",
+        model: "dall-e-2",
         cloudinaryFolder: "blog-images",
       },
     });
