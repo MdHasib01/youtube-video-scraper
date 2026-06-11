@@ -303,36 +303,30 @@ export const generateAiImage = async (req, res) => {
     const imagePrompt = `
 Create a high-quality blog header image for the title: "${title}"
 
-**Visual Style:** ${stylePresets[style] || stylePresets.professional}
+Visual Style:
+${stylePresets[style] || stylePresets.professional}
 
-**Design Requirements:**
+Design Requirements:
 - Professional blog header image suitable for Chris Gray's brand
 - Chris Gray is an Entrepreneur, Community Builder & Marketing Expert
-- Include visual elements that relate to: entrepreneurship, marketing, community building, business growth
-- Modern, clean aesthetic that works well as a blog featured image
-- Ensure text overlay space at the top or center for the blog title
-- Use professional color palette (blues, grays, whites with accent colors)
-- High-quality, web-optimized appearance
-- Avoid any text in the image itself
-- Focus on conceptual imagery that supports the blog topic
+- Include concepts of entrepreneurship, marketing, networking, and business growth
+- Modern clean aesthetic suitable as a blog featured image
+- Leave empty space for title overlay
+- Professional color palette using blues, grays, whites, and accents
+- High quality web optimized appearance
+- Do NOT add any text, letters, or words inside the image
 
-**Theme Elements to Consider:**
-- Business growth and success imagery
-- Community and networking concepts  
-- Marketing and digital strategy visuals
-- Entrepreneurial journey and achievement
-- Professional development and expertise
+Theme Ideas:
+- Business growth
+- Community building
+- Digital marketing
+- Networking
+- Leadership
+- Entrepreneurial success
+`;
 
-The image should be engaging, professional, and immediately convey the expertise and authority of Chris Gray while supporting the blog post topic.
-    `;
+    const validSizes = ["1024x1024", "1792x1024", "1024x1792"];
 
-    const validSizes = [
-      "256x256",
-      "512x512",
-      "1024x1024",
-      "1792x1024",
-      "1024x1792",
-    ];
     if (!validSizes.includes(size)) {
       return res.status(400).json({
         error: "Invalid size parameter",
@@ -344,15 +338,14 @@ The image should be engaging, professional, and immediately convey the expertise
       model: "dall-e-3",
       prompt: imagePrompt,
       n: 1,
-      size: size,
-      quality: quality,
-      style: "natural",
+      size,
+      quality,
       response_format: "url",
     });
 
-    const generatedImage = response.data[0];
+    const generatedImage = response.data?.[0];
 
-    if (!generatedImage) {
+    if (!generatedImage?.url) {
       return res.status(500).json({
         error: "Image generation failed",
         message: "No image was generated. Please try again.",
@@ -366,7 +359,7 @@ The image should be engaging, professional, and immediately convey the expertise
 
     const cloudinaryResult = await uploadImageUrlToCloudinary(
       generatedImage.url,
-      publicId
+      publicId,
     );
 
     if (!cloudinaryResult) {
@@ -376,12 +369,13 @@ The image should be engaging, professional, and immediately convey the expertise
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       title,
       imageUrl: cloudinaryResult.url,
       publicId: cloudinaryResult.publicId,
-      revisedPrompt: generatedImage.revised_prompt,
+      revisedPrompt: generatedImage.revised_prompt || null,
       generatedAt: new Date().toISOString(),
+
       metadata: {
         style,
         size,
@@ -403,8 +397,7 @@ The image should be engaging, professional, and immediately convey the expertise
     if (error.code === "content_policy_violation") {
       return res.status(400).json({
         error: "Content policy violation",
-        message:
-          "The image prompt violates OpenAI's content policy. Please try a different title or approach.",
+        message: "The image prompt violates OpenAI policy.",
       });
     }
 
@@ -415,7 +408,7 @@ The image should be engaging, professional, and immediately convey the expertise
       });
     }
 
-    res.status(500).json({
+    return res.status(500).json({
       error: "Internal server error",
       message: "Failed to generate image. Please try again later.",
       details:
