@@ -320,7 +320,7 @@ Theme Ideas:
 - Entrepreneurial success
 `;
 
-    const validSizes = ["1024x1024", "1024x1792", "1792x1024"];
+    const validSizes = ["1024x1024", "1024x1536", "1536x1024", "auto"];
 
     if (!validSizes.includes(size)) {
       return res.status(400).json({
@@ -330,15 +330,20 @@ Theme Ideas:
     }
 
     const response = await openai.images.generate({
-      model: "dall-e-3",
+      model: "gpt-image-1",
       prompt: imagePrompt,
       n: 1,
       size,
     });
 
     const generatedImage = response.data?.[0];
+    const imageSource = generatedImage?.url
+      ? generatedImage.url
+      : generatedImage?.b64_json
+        ? `data:image/png;base64,${generatedImage.b64_json}`
+        : null;
 
-    if (!generatedImage?.url) {
+    if (!imageSource) {
       return res.status(500).json({
         error: "Image generation failed",
         message: "No image was generated. Please try again.",
@@ -351,7 +356,7 @@ Theme Ideas:
       .substring(0, 50)}`;
 
     const cloudinaryResult = await uploadImageUrlToCloudinary(
-      generatedImage.url,
+      imageSource,
       publicId,
     );
 
@@ -372,7 +377,7 @@ Theme Ideas:
       metadata: {
         style,
         size,
-        model: "dall-e-3",
+        model: "gpt-image-1",
         cloudinaryFolder: "blog-images",
       },
     });
