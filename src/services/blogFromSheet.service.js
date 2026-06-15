@@ -20,6 +20,12 @@ class BlogFromSheetService {
   async initialize() {
     if (this.sheets) return true;
 
+    // Drop legacy unique index on BlogPost.videoId if it still exists.
+    // Older versions of the schema had `videoId: unique: true`, which causes
+    // E11000 duplicate-key errors whenever we save more than one post
+    // without a YouTube video (multiple null videoIds).
+    await this._ensureVideoIdIndexDropped();
+
     if (!this.spreadsheetId) {
       console.error(
         " GOOGLE_SHEETS_BLOG_ID is not set; cannot run blog-from-sheet service.",
@@ -52,6 +58,29 @@ class BlogFromSheetService {
   }
 
   // ----------------------------- Helpers -----------------------------
+
+  async _ensureVideoIdIndexDropped() {
+    if (this._videoIdIndexChecked) return;
+    this._videoIdIndexChecked = true;
+    try {
+      const indexes = await BlogPost.collection.indexes();
+      const legacy = indexes.find(
+        (i) => i.name === "videoId_1" && i.unique,
+      );
+      if (legacy) {
+        await BlogPost.collection.dropIndex("videoId_1");
+        console.log(
+          "🧹 Dropped legacy unique index videoId_1 on blogposts collection.",
+        );
+      }
+    } catch (e) {
+      // Non-fatal: just log and continue.
+      console.warn(
+        "Could not check/drop legacy videoId index:",
+        e.message,
+      );
+    }
+  }
 
   _quotedRange(range) {
     return this.sheetName.includes(" ")
@@ -101,11 +130,11 @@ class BlogFromSheetService {
           {
             role: "system",
             content:
-              "You write concise, compelling blog summaries (2-3 sentences, max 60 words). Return plain text only, no quotes, no markdown.",
+              "You write concise, compelling blog post summaries (2-3 sentences, max 60 words) based purely on the article text. Do NOT mention or reference any video, YouTube, transcript, channel, or speaker. Treat the input as a written blog article. Return plain text only, no quotes, no markdown.",
           },
           {
             role: "user",
-            content: `Title: ${title}\n\nContent:\n${trimmed}\n\nWrite the summary now.`,
+            content: `Title: ${title}\n\nArticle:\n${trimmed}\n\nWrite the summary now.`,
           },
         ],
         max_tokens: 160,
@@ -178,14 +207,13 @@ class BlogFromSheetService {
     });
   }
 
-  async _markRowFailed(rowNumber, message) {
+  async _markRowNotDone(rowNumber) {
     const range = this._quotedRange(`G${rowNumber}`);
-    const status = `Failed: ${String(message).slice(0, 200)}`;
     await this.sheets.spreadsheets.values.update({
       spreadsheetId: this.spreadsheetId,
       range,
       valueInputOption: "RAW",
-      resource: { values: [[status]] },
+      resource: { values: [["Not Done"]] },
     });
   }
 
@@ -227,8 +255,8 @@ class BlogFromSheetService {
 
       const status = (statusRaw || "").toString().trim();
 
-      // Only process rows with empty status
-      if (status !== "") {
+      // Only Done rows are skipped. Empty / "Not Done" / anything else is processed.
+      if (status.toLowerCase() === "done") {
         results.skipped++;
         continue;
       }
@@ -248,9 +276,9 @@ class BlogFromSheetService {
           reason: "Missing title or content",
         });
         try {
-          await this._markRowFailed(sheetRowNumber, "Missing title or content");
+          await this._markRowNotDone(sheetRowNumber);
         } catch (e) {
-          console.error("Failed to mark row as failed:", e.message);
+          console.error("Failed to mark row as Not Done:", e.message);
         }
         continue;
       }
@@ -269,11 +297,10 @@ class BlogFromSheetService {
         // Build post
         const videoId = this._extractVideoId(videoUrl);
 
-        const post = new BlogPost({
+        const postDoc = {
           title: String(title).trim(),
           content: String(content),
           summary,
-          videoId,
           videoUrl: videoUrl || null,
           generatedImageUrl: image?.url || null,
           cloudinaryImageUrl: image?.url || null,
@@ -282,8 +309,11 @@ class BlogFromSheetService {
           publishedAt: new Date(),
           tags: this._parseTags(tagsRaw),
           category: category || "Uncategorized",
-        });
+        };
+        // Only attach videoId when there is an actual YouTube video.
+        if (videoId) postDoc.videoId = videoId;
 
+        const post = new BlogPost(postDoc);
         await post.save();
 
         const postedDate = this._todayString();
@@ -311,9 +341,9 @@ class BlogFromSheetService {
           reason: error.message,
         });
         try {
-          await this._markRowFailed(sheetRowNumber, error.message);
+          await this._markRowNotDone(sheetRowNumber);
         } catch (e) {
-          console.error("Also failed to mark row as failed:", e.message);
+          console.error("Also failed to mark row as Not Done:", e.message);
         }
       }
 
