@@ -320,7 +320,7 @@ Theme Ideas:
 - Entrepreneurial success
 `;
 
-    const validSizes = ["256x256", "512x512", "1024x1024"];
+    const validSizes = ["1024x1024", "1024x1792", "1792x1024"];
 
     if (!validSizes.includes(size)) {
       return res.status(400).json({
@@ -330,7 +330,7 @@ Theme Ideas:
     }
 
     const response = await openai.images.generate({
-      model: "dall-e-2",
+      model: "dall-e-3",
       prompt: imagePrompt,
       n: 1,
       size,
@@ -372,7 +372,7 @@ Theme Ideas:
       metadata: {
         style,
         size,
-        model: "dall-e-2",
+        model: "dall-e-3",
         cloudinaryFolder: "blog-images",
       },
     });
