@@ -45,7 +45,7 @@ app.use(
     },
     allowedHeaders: ["Authorization", "Content-Type"],
     credentials: true,
-  })
+  }),
 );
 // Initialize OpenAI
 const openai = new OpenAI({
@@ -84,7 +84,7 @@ async function getChannelVideos(channelId, maxResults = 5) {
           maxResults: maxResults,
           type: "video",
         },
-      }
+      },
     );
     return response.data.items;
   } catch (error) {
@@ -102,7 +102,7 @@ async function getVideoTranscript(videoId) {
     // Check if transcript is meaningful (not just music or empty)
     if (transcriptText.length < 100) {
       console.log(
-        `Transcript too short for video ${videoId}: ${transcriptText.length} characters`
+        `Transcript too short for video ${videoId}: ${transcriptText.length} characters`,
       );
       return null;
     }
@@ -110,7 +110,7 @@ async function getVideoTranscript(videoId) {
     return transcriptText;
   } catch (error) {
     console.log(
-      `No transcript available for video ${videoId}: ${error.message}`
+      `No transcript available for video ${videoId}: ${error.message}`,
     );
     return null;
   }
@@ -127,7 +127,7 @@ async function getVideoDetails(videoId) {
           id: videoId,
           part: "snippet,statistics",
         },
-      }
+      },
     );
 
     const video = response.data.items[0];
@@ -153,7 +153,7 @@ async function generateBlogPost(
   content,
   videoTitle,
   channelName,
-  contentType = "transcript"
+  contentType = "transcript",
 ) {
   try {
     let prompt;
@@ -242,7 +242,7 @@ async function generateBlogImage(title, summary, videoId) {
     const publicId = `blog_${videoId}_${Date.now()}`;
     const cloudinaryResult = await uploadImageUrlToCloudinary(
       generatedImageUrl,
-      publicId
+      publicId,
     );
 
     return {
@@ -295,7 +295,7 @@ async function processVideo(video, channelName) {
     }`;
     contentType = "description";
     console.log(
-      `⚠️  Using description fallback for video: ${video.snippet.title}`
+      `⚠️  Using description fallback for video: ${video.snippet.title}`,
     );
   }
 
@@ -304,7 +304,7 @@ async function processVideo(video, channelName) {
     content,
     video.snippet.title,
     channelName,
-    contentType
+    contentType,
   );
   if (!blogData) {
     console.log("Failed to generate blog post for video:", videoId);
@@ -315,7 +315,7 @@ async function processVideo(video, channelName) {
   const imageData = await generateBlogImage(
     blogData.title,
     blogData.summary,
-    videoId
+    videoId,
   );
 
   // Save to database
@@ -342,7 +342,7 @@ async function processVideo(video, channelName) {
     console.log(`✅ Blog post saved successfully: ${blogData.title}`);
     if (imageData.cloudinaryUrl) {
       console.log(
-        `✅ Image uploaded to Cloudinary: ${imageData.cloudinaryUrl}`
+        `✅ Image uploaded to Cloudinary: ${imageData.cloudinaryUrl}`,
       );
     }
   } catch (error) {
@@ -391,7 +391,9 @@ import youtubeRoutes from "./src/routes/youtube.routes.js";
 import newsletterRoutes from "./src/routes/newsletter.routes.js";
 import aiRoutes from "./src/routes/aicontent.routes.js";
 import userRoutes from "./src/routes/user.routes.js";
+import sheetBlogRoutes from "./src/routes/blogFromSheet.routes.js";
 import { uploadImageUrlToCloudinary } from "./src/services/cloudinary.service.js";
+import { blogFromSheetService } from "./src/services/blogFromSheet.service.js";
 // Post Routes
 app.use("/api", postRoutes);
 
@@ -406,6 +408,9 @@ app.use("/api/newsletter", newsletterRoutes);
 
 // User Route
 app.use("/api/user", userRoutes);
+
+// Sheet -> Blog Routes
+app.use("/api", sheetBlogRoutes);
 
 app.post("/trigger-job", async (req, res) => {
   try {
@@ -440,7 +445,7 @@ app.get("/stats", async (req, res) => {
 });
 
 let cornJob = new Date(
-  new Date().getTime() + 2 * 60 * 1000
+  new Date().getTime() + 2 * 60 * 1000,
 ).toLocaleTimeString();
 
 // Cron job - runs every 2 minutes
@@ -448,13 +453,27 @@ cron.schedule("0 0 * * *", async () => {
   try {
     console.log("Running scheduled job at:", new Date().toLocaleTimeString());
     cornJob = new Date(
-      new Date().getTime() + 2 * 60 * 1000
+      new Date().getTime() + 2 * 60 * 1000,
     ).toLocaleTimeString();
     processChannels();
     const result = await scrapeAllChannels();
     console.log("Scheduled scraping result:", result);
   } catch (error) {
     console.error("Scheduled scraping failed:", error);
+  }
+});
+
+// Daily cron - process the blog ideas Google Sheet every day at 01:00 server time.
+cron.schedule("* * * * *", async () => {
+  try {
+    console.log(
+      "📰 Running daily sheet-to-blog job at:",
+      new Date().toLocaleString(),
+    );
+    const result = await blogFromSheetService.processSheet();
+    console.log("Sheet-to-blog result:", result);
+  } catch (error) {
+    console.error("Sheet-to-blog cron failed:", error);
   }
 });
 
