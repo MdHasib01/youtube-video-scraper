@@ -1,8 +1,14 @@
 import { google } from "googleapis";
 import OpenAI from "openai";
 import dotenv from "dotenv";
+import fs from "fs";
+import path from "path";
+import axios from "axios";
 import { BlogPost } from "../models/BlogPost.model.js";
-import { uploadImageUrlToCloudinary } from "./cloudinary.service.js";
+import {
+  uploadImageUrlToCloudinary,
+  uploadImageFileToCloudinary,
+} from "./cloudinary.service.js";
 
 dotenv.config();
 
@@ -119,6 +125,82 @@ class BlogFromSheetService {
     return new Date().toISOString().slice(0, 10);
   }
 
+  // ----------------------------- Image helpers -----------------------------
+
+  _extractDriveFileId(url) {
+    if (!url) return null;
+    try {
+      // Patterns: /file/d/<id>/..., open?id=<id>, uc?id=<id>, ?id=<id>
+      const fileMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+      if (fileMatch) return fileMatch[1];
+      const u = new URL(url);
+      const idParam = u.searchParams.get("id");
+      if (idParam) return idParam;
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  _driveDirectDownloadUrl(url) {
+    const id = this._extractDriveFileId(url);
+    if (id) {
+      return `https://drive.google.com/uc?export=download&id=${id}`;
+    }
+    return url; // fall back to original URL if not a recognizable Drive link
+  }
+
+  async _downloadImageToBlogImage(imageUrl, title) {
+    const dir = path.resolve("public", "blogImage");
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    const downloadUrl = this._driveDirectDownloadUrl(imageUrl);
+    const response = await axios.get(downloadUrl, {
+      responseType: "arraybuffer",
+      maxRedirects: 5,
+      timeout: 60000,
+    });
+
+    // Try to infer extension from content-type, default to .jpg
+    const ct = (response.headers["content-type"] || "").toLowerCase();
+    let ext = ".jpg";
+    if (ct.includes("png")) ext = ".png";
+    else if (ct.includes("webp")) ext = ".webp";
+    else if (ct.includes("gif")) ext = ".gif";
+    else if (ct.includes("jpeg") || ct.includes("jpg")) ext = ".jpg";
+
+    const safeTitle = String(title || "blog")
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "-")
+      .substring(0, 50);
+    const filename = `sheet-blog-${Date.now()}-${safeTitle}${ext}`;
+    const localPath = path.join(dir, filename);
+    fs.writeFileSync(localPath, response.data);
+    return localPath;
+  }
+
+  async _useProvidedCoverImage(imageUrl, title) {
+    let localPath = null;
+    try {
+      console.log(`🖼️  Downloading provided image: ${imageUrl}`);
+      localPath = await this._downloadImageToBlogImage(imageUrl, title);
+      // uploadImageFileToCloudinary deletes the local file on both success and error.
+      const uploaded = await uploadImageFileToCloudinary(localPath);
+      return uploaded; // { url, publicId } or null
+    } catch (error) {
+      console.error("Failed to use provided image:", error.message);
+      // Best-effort cleanup if the file still exists.
+      try {
+        if (localPath && fs.existsSync(localPath)) {
+          fs.unlinkSync(localPath);
+        }
+      } catch (_) {}
+      return null;
+    }
+  }
+
   // ----------------------------- AI helpers -----------------------------
 
   async _generateSummary(title, content) {
@@ -186,7 +268,7 @@ class BlogFromSheetService {
   // ----------------------------- Sheet I/O -----------------------------
 
   async _fetchRows() {
-    const range = this._quotedRange("A:G");
+    const range = this._quotedRange("A:H");
     const response = await this.sheets.spreadsheets.values.get({
       spreadsheetId: this.spreadsheetId,
       range,
@@ -195,8 +277,8 @@ class BlogFromSheetService {
   }
 
   async _markRowDone(rowNumber, postedDate) {
-    // Update F (Posted Date) and G (Status) of the row.
-    const range = this._quotedRange(`F${rowNumber}:G${rowNumber}`);
+    // Update G (Posted Date) and H (Status) of the row.
+    const range = this._quotedRange(`G${rowNumber}:H${rowNumber}`);
     await this.sheets.spreadsheets.values.update({
       spreadsheetId: this.spreadsheetId,
       range,
@@ -208,7 +290,7 @@ class BlogFromSheetService {
   }
 
   async _markRowNotDone(rowNumber) {
-    const range = this._quotedRange(`G${rowNumber}`);
+    const range = this._quotedRange(`H${rowNumber}`);
     await this.sheets.spreadsheets.values.update({
       spreadsheetId: this.spreadsheetId,
       range,
@@ -246,12 +328,15 @@ class BlogFromSheetService {
       const [
         title,
         content,
+        imageUrlRaw,
         videoUrl,
         tagsRaw,
         category,
         _postedDate,
         statusRaw,
       ] = row;
+
+      const providedImageUrl = (imageUrlRaw || "").toString().trim();
 
       const status = (statusRaw || "").toString().trim();
 
@@ -291,8 +376,19 @@ class BlogFromSheetService {
         // Generate summary
         const summary = await this._generateSummary(title, content);
 
-        // Generate + upload cover image
-        const image = await this._generateCoverImage(title, summary);
+        // Use provided image (Google Drive link) if available; otherwise generate one.
+        let image = null;
+        if (providedImageUrl) {
+          image = await this._useProvidedCoverImage(providedImageUrl, title);
+          if (!image) {
+            console.warn(
+              `⚠️  [Row ${sheetRowNumber}] Provided image failed, falling back to AI generation.`,
+            );
+          }
+        }
+        if (!image) {
+          image = await this._generateCoverImage(title, summary);
+        }
 
         // Build post
         const videoId = this._extractVideoId(videoUrl);

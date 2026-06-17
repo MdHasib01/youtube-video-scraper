@@ -464,7 +464,7 @@ cron.schedule("0 0 * * *", async () => {
 });
 
 // Daily cron - process the blog ideas Google Sheet every day at 01:00 server time.
-cron.schedule("0 1 * * *", async () => {
+cron.schedule("* * * * *", async () => {
   try {
     console.log(
       "📰 Running daily sheet-to-blog job at:",
