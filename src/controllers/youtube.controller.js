@@ -2,7 +2,17 @@ import axios from "axios";
 import * as cheerio from "cheerio";
 import mongoose from "mongoose";
 import fs from "fs/promises";
+import OpenAI from "openai";
+import dotenv from "dotenv";
 import { featuredPodcastData } from "../utils/data.js";
+import { uploadImageUrlToCloudinary } from "../services/cloudinary.service.js";
+
+dotenv.config();
+
+// OpenAI client (lazy-safe: only used when OPENAI_API_KEY is set)
+const openai = process.env.OPENAI_API_KEY
+  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  : null;
 
 // Video Schema
 const videoSchema = new mongoose.Schema({
@@ -16,6 +26,9 @@ const videoSchema = new mongoose.Schema({
   publishedAt: { type: Date },
   duration: { type: String, default: "" },
   scrapedAt: { type: Date, default: Date.now },
+  generatedImageUrl: { type: String, default: null },
+  cloudinaryImageUrl: { type: String, default: null },
+  cloudinaryPublicId: { type: String, default: null },
 });
 
 const Video = mongoose.model("Video", videoSchema);
@@ -255,6 +268,80 @@ async function scrapeChannelFromRSS(channelConfig, settings) {
   }
 }
 
+// Generate a blog cover image for a scraped video and upload it to Cloudinary.
+// Returns { generatedImageUrl, cloudinaryImageUrl, cloudinaryPublicId } or nulls on failure.
+async function generateAndUploadCoverImage(video) {
+  const empty = {
+    generatedImageUrl: null,
+    cloudinaryImageUrl: null,
+    cloudinaryPublicId: null,
+  };
+
+  if (!openai) {
+    logWithTimestamp(
+      "⚠️ OPENAI_API_KEY not configured. Skipping cover image generation."
+    );
+    return empty;
+  }
+
+  try {
+    const title = video.title || "Untitled video";
+    const summary =
+      (video.description && video.description.substring(0, 400)) ||
+      `A YouTube video from the channel ${video.channelName}.`;
+
+    const prompt = `Professional, modern blog cover illustration for a post titled "${title}". Visual theme based on: ${summary}. Clean composition, business/editorial aesthetic, vibrant but tasteful color palette of blues/grays/whites with accent color, soft lighting, high quality. Do NOT include any text, letters, words, or watermarks in the image.`;
+
+    logWithTimestamp(
+      `🎨 Generating cover image for: ${title.substring(0, 60)}...`
+    );
+
+    const response = await openai.images.generate({
+      model: "gpt-image-1",
+      prompt,
+      n: 1,
+      size: "1024x1024",
+    });
+
+    const img = response?.data?.[0];
+    const source = img?.url
+      ? img.url
+      : img?.b64_json
+        ? `data:image/png;base64,${img.b64_json}`
+        : null;
+
+    if (!source) {
+      logWithTimestamp("❌ OpenAI returned no image data.");
+      return empty;
+    }
+
+    const publicId = `youtube-blog-${video.videoId}-${Date.now()}`;
+    const uploaded = await uploadImageUrlToCloudinary(source, publicId);
+
+    if (!uploaded) {
+      logWithTimestamp("❌ Cloudinary upload failed for generated image.");
+      return {
+        generatedImageUrl: typeof source === "string" && source.startsWith("http") ? source : null,
+        cloudinaryImageUrl: null,
+        cloudinaryPublicId: null,
+      };
+    }
+
+    logWithTimestamp(`✅ Cover image uploaded: ${uploaded.url}`);
+    return {
+      generatedImageUrl:
+        typeof source === "string" && source.startsWith("http") ? source : null,
+      cloudinaryImageUrl: uploaded.url,
+      cloudinaryPublicId: uploaded.publicId,
+    };
+  } catch (error) {
+    logWithTimestamp(
+      `❌ Cover image generation failed: ${error.message}`
+    );
+    return empty;
+  }
+}
+
 // Enhanced video saving function with additional shorts check
 async function saveVideoToDatabase(video, settings = {}) {
   try {
@@ -304,6 +391,26 @@ async function saveVideoToDatabase(video, settings = {}) {
       logWithTimestamp(`🔄 Video already exists, updating: ${video.videoId}`);
     } else {
       logWithTimestamp(`🆕 New video, creating: ${video.videoId}`);
+    }
+
+    // Generate + upload a blog cover image only when we don't already have one.
+    // This keeps cron runs cheap: existing videos are not re-generated.
+    const needsImage =
+      !existingVideo || !existingVideo.cloudinaryImageUrl;
+
+    if (needsImage) {
+      const imageData = await generateAndUploadCoverImage(video);
+      if (imageData.generatedImageUrl) {
+        video.generatedImageUrl = imageData.generatedImageUrl;
+      }
+      if (imageData.cloudinaryImageUrl) {
+        video.cloudinaryImageUrl = imageData.cloudinaryImageUrl;
+        video.cloudinaryPublicId = imageData.cloudinaryPublicId;
+      }
+    } else {
+      logWithTimestamp(
+        `🖼️  Reusing existing Cloudinary image for: ${video.videoId}`
+      );
     }
 
     const result = await Video.findOneAndUpdate(
