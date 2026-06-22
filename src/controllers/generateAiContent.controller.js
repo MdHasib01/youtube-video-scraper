@@ -330,7 +330,7 @@ Theme Ideas:
     }
 
     const response = await openai.images.generate({
-      model: "gpt-image-2",
+      model: "gpt-image-1",
       prompt: imagePrompt,
       n: 1,
       size,
@@ -377,7 +377,7 @@ Theme Ideas:
       metadata: {
         style,
         size,
-        model: "gpt-image-2",
+        model: "gpt-image-1",
         cloudinaryFolder: "blog-images",
       },
     });

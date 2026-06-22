@@ -11,7 +11,7 @@ export const fakeImageUrl = async (req, res) => {
       style: "professional",
       size: "1024x1024",
       quality: "standard",
-      model: "gpt-image-2",
+      model: "gpt-image-1",
       cloudinaryFolder: "blog-images",
     },
   });

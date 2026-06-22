@@ -237,7 +237,7 @@ class BlogFromSheetService {
       const prompt = `Professional, modern blog cover illustration for a post titled "${title}". Visual theme based on: ${summary}. Clean composition, business/editorial aesthetic, vibrant but tasteful color palette of blues/grays/whites with accent color, soft lighting, high quality. Do NOT include any text, letters, words, or watermarks in the image.`;
 
       const response = await this.openai.images.generate({
-        model: "gpt-image-2",
+        model: "gpt-image-1",
         prompt,
         n: 1,
         size: "1024x1024",

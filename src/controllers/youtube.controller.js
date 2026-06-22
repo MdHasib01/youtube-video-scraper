@@ -297,7 +297,7 @@ async function generateAndUploadCoverImage(video) {
     );
 
     const response = await openai.images.generate({
-      model: "gpt-image-2",
+      model: "gpt-image-1",
       prompt,
       n: 1,
       size: "1024x1024",
@@ -338,7 +338,16 @@ async function generateAndUploadCoverImage(video) {
       cloudinaryPublicId: uploaded.publicId,
     };
   } catch (error) {
-    logWithTimestamp(`❌ Cover image generation failed: ${error.message}`);
+    // Surface the real OpenAI error so issues like invalid model name,
+    // missing org verification, or quota problems are easy to spot in logs.
+    logWithTimestamp(`❌ Cover image generation failed: ${error.message}`, {
+      name: error.name,
+      status: error.status,
+      code: error.code,
+      type: error.type,
+      param: error.param,
+      response: error.response?.data,
+    });
     return empty;
   }
 }
