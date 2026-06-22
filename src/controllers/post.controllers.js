@@ -150,3 +150,19 @@ export const deletePost = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+export const deleteManyPosts = async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: "Please provide an array of post IDs to delete" });
+    }
+    const result = await BlogPost.deleteMany({ _id: { $in: ids } });
+    res.json({ 
+      message: "Posts deleted successfully", 
+      deletedCount: result.deletedCount 
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};

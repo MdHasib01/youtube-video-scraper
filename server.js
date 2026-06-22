@@ -449,7 +449,7 @@ let cornJob = new Date(
 ).toLocaleTimeString();
 
 // Cron job - runs every 2 minutes
-cron.schedule("* * * * *", async () => {
+cron.schedule("0 1 * * *", async () => {
   try {
     console.log("Running scheduled job at:", new Date().toLocaleTimeString());
     cornJob = new Date(
