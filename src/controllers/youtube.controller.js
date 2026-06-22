@@ -73,7 +73,7 @@ async function checkMongoConnection() {
     };
 
     logWithTimestamp(
-      `📊 MongoDB connection state: ${states[connectionState]} (${connectionState})`
+      `📊 MongoDB connection state: ${states[connectionState]} (${connectionState})`,
     );
 
     if (connectionState !== 1) {
@@ -84,7 +84,7 @@ async function checkMongoConnection() {
     // Test database operation
     const testCount = await Video.countDocuments();
     logWithTimestamp(
-      `✅ MongoDB connection verified. Current video count: ${testCount}`
+      `✅ MongoDB connection verified. Current video count: ${testCount}`,
     );
     return true;
   } catch (error) {
@@ -111,7 +111,7 @@ function isVideoTooOld(publishedDate, maxVideoAge) {
         videoDate: videoDate.toISOString(),
         cutoffDate: cutoffDate.toISOString(),
         maxVideoAge,
-      }
+      },
     );
 
     return isTooOld;
@@ -139,7 +139,7 @@ async function fetchDurationFromWatchPage(videoId) {
     }
   } catch (err) {
     logWithTimestamp(
-      `⚠️ Failed to fetch duration for ${videoId}: ${err.message}`
+      `⚠️ Failed to fetch duration for ${videoId}: ${err.message}`,
     );
   }
   return null;
@@ -156,7 +156,7 @@ function isShortVideo(durationSeconds) {
 async function scrapeChannelFromRSS(channelConfig, settings) {
   try {
     logWithTimestamp(
-      `🎯 Starting to process channel: ${channelConfig.name} (ID: ${channelConfig.id})`
+      `🎯 Starting to process channel: ${channelConfig.name} (ID: ${channelConfig.id})`,
     );
 
     const rssUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelConfig.id}`;
@@ -171,7 +171,7 @@ async function scrapeChannelFromRSS(channelConfig, settings) {
     });
 
     logWithTimestamp(
-      `✅ RSS feed fetched successfully. Response size: ${response.data.length} characters`
+      `✅ RSS feed fetched successfully. Response size: ${response.data.length} characters`,
     );
 
     const $ = cheerio.load(response.data, { xmlMode: true });
@@ -223,8 +223,8 @@ async function scrapeChannelFromRSS(channelConfig, settings) {
             logWithTimestamp(
               `🩳 Skipping short video (${durationSeconds}s): ${title.substring(
                 0,
-                50
-              )}...`
+                50,
+              )}...`,
             );
             return;
           }
@@ -250,19 +250,19 @@ async function scrapeChannelFromRSS(channelConfig, settings) {
       } catch (entryError) {
         logWithTimestamp(
           `❌ Error processing entry ${index + 1}:`,
-          entryError.message
+          entryError.message,
         );
       }
     });
 
     logWithTimestamp(
-      `📊 Channel processing completed. Total videos to save: ${videos.length}, Skipped shorts: ${skippedShorts}`
+      `📊 Channel processing completed. Total videos to save: ${videos.length}, Skipped shorts: ${skippedShorts}`,
     );
     return videos;
   } catch (error) {
     logWithTimestamp(
       `❌ Error scraping channel ${channelConfig.name}:`,
-      error.message
+      error.message,
     );
     return [];
   }
@@ -279,7 +279,7 @@ async function generateAndUploadCoverImage(video) {
 
   if (!openai) {
     logWithTimestamp(
-      "⚠️ OPENAI_API_KEY not configured. Skipping cover image generation."
+      "⚠️ OPENAI_API_KEY not configured. Skipping cover image generation.",
     );
     return empty;
   }
@@ -293,11 +293,11 @@ async function generateAndUploadCoverImage(video) {
     const prompt = `Professional, modern blog cover illustration for a post titled "${title}". Visual theme based on: ${summary}. Clean composition, business/editorial aesthetic, vibrant but tasteful color palette of blues/grays/whites with accent color, soft lighting, high quality. Do NOT include any text, letters, words, or watermarks in the image.`;
 
     logWithTimestamp(
-      `🎨 Generating cover image for: ${title.substring(0, 60)}...`
+      `🎨 Generating cover image for: ${title.substring(0, 60)}...`,
     );
 
     const response = await openai.images.generate({
-      model: "gpt-image-1",
+      model: "gpt-image-2",
       prompt,
       n: 1,
       size: "1024x1024",
@@ -321,7 +321,10 @@ async function generateAndUploadCoverImage(video) {
     if (!uploaded) {
       logWithTimestamp("❌ Cloudinary upload failed for generated image.");
       return {
-        generatedImageUrl: typeof source === "string" && source.startsWith("http") ? source : null,
+        generatedImageUrl:
+          typeof source === "string" && source.startsWith("http")
+            ? source
+            : null,
         cloudinaryImageUrl: null,
         cloudinaryPublicId: null,
       };
@@ -335,9 +338,7 @@ async function generateAndUploadCoverImage(video) {
       cloudinaryPublicId: uploaded.publicId,
     };
   } catch (error) {
-    logWithTimestamp(
-      `❌ Cover image generation failed: ${error.message}`
-    );
+    logWithTimestamp(`❌ Cover image generation failed: ${error.message}`);
     return empty;
   }
 }
@@ -367,15 +368,15 @@ async function saveVideoToDatabase(video, settings = {}) {
         logWithTimestamp(
           `🩳 Safety check: Skipping short video in save function (${totalSeconds}s): ${video.title.substring(
             0,
-            50
-          )}...`
+            50,
+          )}...`,
         );
         return { success: false, error: "Video is too short", isShort: true };
       }
     }
 
     logWithTimestamp(
-      `💾 Attempting to save video: ${video.title.substring(0, 50)}...`
+      `💾 Attempting to save video: ${video.title.substring(0, 50)}...`,
     );
     logWithTimestamp(`📋 Video data being saved:`, {
       videoId: video.videoId,
@@ -395,8 +396,7 @@ async function saveVideoToDatabase(video, settings = {}) {
 
     // Generate + upload a blog cover image only when we don't already have one.
     // This keeps cron runs cheap: existing videos are not re-generated.
-    const needsImage =
-      !existingVideo || !existingVideo.cloudinaryImageUrl;
+    const needsImage = !existingVideo || !existingVideo.cloudinaryImageUrl;
 
     if (needsImage) {
       const imageData = await generateAndUploadCoverImage(video);
@@ -409,7 +409,7 @@ async function saveVideoToDatabase(video, settings = {}) {
       }
     } else {
       logWithTimestamp(
-        `🖼️  Reusing existing Cloudinary image for: ${video.videoId}`
+        `🖼️  Reusing existing Cloudinary image for: ${video.videoId}`,
       );
     }
 
@@ -420,7 +420,7 @@ async function saveVideoToDatabase(video, settings = {}) {
         upsert: true,
         new: true,
         runValidators: true,
-      }
+      },
     );
 
     logWithTimestamp(`✅ Video saved successfully:`, {
@@ -475,7 +475,7 @@ export const scrapeAllChannels = async () => {
     }
 
     logWithTimestamp(
-      `📊 Starting to process ${config.channels.length} channels`
+      `📊 Starting to process ${config.channels.length} channels`,
     );
 
     let totalScraped = 0;
@@ -492,15 +492,15 @@ export const scrapeAllChannels = async () => {
         logWithTimestamp(
           `\n🎯 Processing channel ${i + 1}/${config.channels.length}: ${
             channelConfig.name
-          }`
+          }`,
         );
 
         const videos = await scrapeChannelFromRSS(
           channelConfig,
-          config.settings
+          config.settings,
         );
         logWithTimestamp(
-          `📋 Found ${videos.length} videos for channel: ${channelConfig.name}`
+          `📋 Found ${videos.length} videos for channel: ${channelConfig.name}`,
         );
 
         // Save videos to database
@@ -515,7 +515,7 @@ export const scrapeAllChannels = async () => {
           logWithTimestamp(
             `\n💾 Saving video ${j + 1}/${videos.length} for ${
               channelConfig.name
-            }`
+            }`,
           );
 
           const saveResult = await saveVideoToDatabase(video, config.settings);
@@ -534,8 +534,8 @@ export const scrapeAllChannels = async () => {
             logWithTimestamp(
               `🩳 Skipped short video in save: ${video.title.substring(
                 0,
-                50
-              )}...`
+                50,
+              )}...`,
             );
           } else {
             errorCount++;
@@ -567,10 +567,10 @@ export const scrapeAllChannels = async () => {
         // Processing delay between channels
         if (config.settings.processingDelay) {
           logWithTimestamp(
-            `⏳ Waiting ${config.settings.processingDelay}ms before next channel...`
+            `⏳ Waiting ${config.settings.processingDelay}ms before next channel...`,
           );
           await new Promise((resolve) =>
-            setTimeout(resolve, config.settings.processingDelay)
+            setTimeout(resolve, config.settings.processingDelay),
           );
         }
       } catch (error) {
@@ -667,7 +667,7 @@ export const getAllVideos = async (req, res) => {
       .lean();
 
     logWithTimestamp(
-      `📋 Retrieved ${videos.length} videos for page ${pageNum}`
+      `📋 Retrieved ${videos.length} videos for page ${pageNum}`,
     );
 
     // Calculate pagination info
@@ -722,7 +722,7 @@ export const getVideoStats = async (req, res) => {
     ]);
 
     logWithTimestamp(
-      `📊 Channel statistics calculated for ${channelStats.length} channels`
+      `📊 Channel statistics calculated for ${channelStats.length} channels`,
     );
 
     const recentVideos = await Video.find({})
@@ -732,7 +732,7 @@ export const getVideoStats = async (req, res) => {
       .lean();
 
     logWithTimestamp(
-      `📋 Retrieved ${recentVideos.length} recently scraped videos`
+      `📋 Retrieved ${recentVideos.length} recently scraped videos`,
     );
 
     const response = {
