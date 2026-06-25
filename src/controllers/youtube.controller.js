@@ -268,6 +268,64 @@ async function scrapeChannelFromRSS(channelConfig, settings) {
   }
 }
 
+// ---------- Helpers for cover-image generation ----------
+
+// Strip URLs, @handles, hashtags, emojis/control chars, and collapse whitespace.
+// YouTube titles/descriptions routinely include things that trip gpt-image-1's
+// moderation (links, sponsor text, real names, emojis), which is the reason
+// this path was returning nulls while the other AI-image paths worked.
+function sanitizeForPrompt(text, maxLen = 300) {
+  if (!text) return "";
+  return String(text)
+    .replace(/https?:\/\/\S+/gi, "")
+    .replace(/www\.\S+/gi, "")
+    .replace(/[@#][\w.-]+/g, "")
+    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, "")
+    .replace(/[\u0000-\u001F\u007F]/g, " ")
+    .replace(/["`]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, maxLen);
+}
+
+// Use a cheap chat model to convert raw YouTube title + description into a
+// clean, moderation-safe visual-theme description. Mirrors the approach used
+// in blogFromSheet.service.js (which works reliably with gpt-image-1).
+async function buildSafeVisualTheme(title, rawDescription, channelName) {
+  const cleanTitle = sanitizeForPrompt(title, 200) || "Untitled";
+  const cleanDesc = sanitizeForPrompt(rawDescription, 800);
+
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content:
+            "You describe abstract visual themes for blog cover illustrations. Given a topic, output ONE short sentence (max 30 words) describing visual elements only (objects, scenery, mood, color hints). Do NOT mention or reference any video, YouTube, transcript, channel, podcast, host, speaker, brand, product, real person's name, URL, or sponsor. Do NOT include any text/letters in the image description. Plain text only, no quotes, no markdown.",
+        },
+        {
+          role: "user",
+          content: `Topic title: ${cleanTitle}\n\nAdditional context (may be ignored if unsafe): ${cleanDesc || "(none)"}\n\nWrite the visual theme sentence now.`,
+        },
+      ],
+      max_tokens: 80,
+      temperature: 0.5,
+    });
+    const text = completion.choices?.[0]?.message?.content?.trim();
+    if (text) return { cleanTitle, theme: sanitizeForPrompt(text, 280) };
+  } catch (e) {
+    logWithTimestamp(
+      `⚠️ Visual-theme generation failed, using fallback: ${e.message}`,
+    );
+  }
+  // Fallback: generic safe theme.
+  return {
+    cleanTitle,
+    theme: `An abstract editorial illustration suggesting the topic, suitable for a professional ${channelName || "business"} blog`,
+  };
+}
+
 // Generate a blog cover image for a scraped video and upload it to Cloudinary.
 // Returns { generatedImageUrl, cloudinaryImageUrl, cloudinaryPublicId } or nulls on failure.
 async function generateAndUploadCoverImage(video) {
@@ -284,25 +342,68 @@ async function generateAndUploadCoverImage(video) {
     return empty;
   }
 
-  try {
-    const title = video.title || "Untitled video";
-    const summary =
-      (video.description && video.description.substring(0, 400)) ||
-      `A YouTube video from the channel ${video.channelName}.`;
+  const { cleanTitle, theme } = await buildSafeVisualTheme(
+    video.title,
+    video.description,
+    video.channelName,
+  );
 
-    const prompt = `Professional, modern blog cover illustration for a post titled "${title}". Visual theme based on: ${summary}. Clean composition, business/editorial aesthetic, vibrant but tasteful color palette of blues/grays/whites with accent color, soft lighting, high quality. Do NOT include any text, letters, words, or watermarks in the image.`;
+  const primaryPrompt = `Professional, modern blog cover illustration for a post titled "${cleanTitle}". Visual theme: ${theme}. Clean composition, business/editorial aesthetic, vibrant but tasteful color palette of blues/grays/whites with accent color, soft lighting, high quality. Do NOT include any text, letters, words, or watermarks in the image.`;
 
+  // Generic, always-safe fallback prompt if the primary one is moderation-blocked.
+  const fallbackPrompt = `Professional, modern, abstract editorial blog cover illustration. Clean composition, business aesthetic, vibrant but tasteful color palette of blues, grays, and whites with a subtle accent color, soft lighting, high quality. Do NOT include any text, letters, words, or watermarks in the image.`;
+
+  const tryGenerate = async (prompt, label) => {
     logWithTimestamp(
-      `🎨 Generating cover image for: ${title.substring(0, 60)}...`,
+      `🎨 Generating cover image (${label}) for: ${cleanTitle.substring(0, 60)}...`,
     );
-
-    const response = await openai.images.generate({
+    return openai.images.generate({
       model: "gpt-image-1",
       prompt,
       n: 1,
       size: "1024x1024",
+      moderation: "low",
     });
+  };
 
+  let response;
+  try {
+    response = await tryGenerate(primaryPrompt, "primary");
+  } catch (error) {
+    const blocked =
+      error.status === 400 ||
+      /moderation|safety|content[_ ]policy/i.test(
+        error.message + " " + (error.code || "") + " " + (error.type || ""),
+      );
+    logWithTimestamp(
+      `⚠️ Primary image prompt failed (${blocked ? "likely moderation" : "other error"}): ${error.message}`,
+      {
+        name: error.name,
+        status: error.status,
+        code: error.code,
+        type: error.type,
+        param: error.param,
+        response: error.response?.data,
+      },
+    );
+    if (!blocked) return empty;
+    try {
+      response = await tryGenerate(fallbackPrompt, "fallback");
+    } catch (fallbackError) {
+      logWithTimestamp(
+        `❌ Fallback image generation also failed: ${fallbackError.message}`,
+        {
+          status: fallbackError.status,
+          code: fallbackError.code,
+          type: fallbackError.type,
+          response: fallbackError.response?.data,
+        },
+      );
+      return empty;
+    }
+  }
+
+  try {
     const img = response?.data?.[0];
     const source = img?.url
       ? img.url
@@ -338,16 +439,14 @@ async function generateAndUploadCoverImage(video) {
       cloudinaryPublicId: uploaded.publicId,
     };
   } catch (error) {
-    // Surface the real OpenAI error so issues like invalid model name,
-    // missing org verification, or quota problems are easy to spot in logs.
-    logWithTimestamp(`❌ Cover image generation failed: ${error.message}`, {
-      name: error.name,
-      status: error.status,
-      code: error.code,
-      type: error.type,
-      param: error.param,
-      response: error.response?.data,
-    });
+    logWithTimestamp(
+      `❌ Cover image post-processing failed: ${error.message}`,
+      {
+        name: error.name,
+        status: error.status,
+        code: error.code,
+      },
+    );
     return empty;
   }
 }
@@ -408,13 +507,22 @@ async function saveVideoToDatabase(video, settings = {}) {
     const needsImage = !existingVideo || !existingVideo.cloudinaryImageUrl;
 
     if (needsImage) {
-      const imageData = await generateAndUploadCoverImage(video);
-      if (imageData.generatedImageUrl) {
-        video.generatedImageUrl = imageData.generatedImageUrl;
-      }
-      if (imageData.cloudinaryImageUrl) {
-        video.cloudinaryImageUrl = imageData.cloudinaryImageUrl;
-        video.cloudinaryPublicId = imageData.cloudinaryPublicId;
+      // Image generation must NEVER break scraping/saving. Any failure here
+      // (OpenAI moderation, network, Cloudinary, quota, etc.) is swallowed and
+      // we simply save the video without a generated cover image.
+      try {
+        const imageData = await generateAndUploadCoverImage(video);
+        if (imageData.generatedImageUrl) {
+          video.generatedImageUrl = imageData.generatedImageUrl;
+        }
+        if (imageData.cloudinaryImageUrl) {
+          video.cloudinaryImageUrl = imageData.cloudinaryImageUrl;
+          video.cloudinaryPublicId = imageData.cloudinaryPublicId;
+        }
+      } catch (imgError) {
+        logWithTimestamp(
+          `⚠️ Cover image step failed (continuing to save video): ${imgError.message}`,
+        );
       }
     } else {
       logWithTimestamp(
