@@ -256,15 +256,11 @@ async function generateBlogImage(title, summary, videoId) {
 
     // Upload to Cloudinary
     const publicId = `blog_${videoId}_${Date.now()}`;
-    const cloudinaryResult = await uploadImageUrlToCloudinary(
-      source,
-      publicId,
-    );
+    const cloudinaryResult = await uploadImageUrlToCloudinary(source, publicId);
 
     return {
-      openaiUrl: typeof source === "string" && source.startsWith("http")
-        ? source
-        : null,
+      openaiUrl:
+        typeof source === "string" && source.startsWith("http") ? source : null,
       cloudinaryUrl: cloudinaryResult?.url || null,
       cloudinaryPublicId: cloudinaryResult?.publicId || null,
     };
@@ -467,8 +463,8 @@ let cornJob = new Date(
   new Date().getTime() + 2 * 60 * 1000,
 ).toLocaleTimeString();
 
-// Cron job - runs every 2 minutes
-cron.schedule("* * * * *", async () => {
+// Cron job - runs every day at 01:00 server time.
+cron.schedule("0 1 * * *", async () => {
   try {
     console.log("Running scheduled job at:", new Date().toLocaleTimeString());
     cornJob = new Date(
@@ -487,6 +483,21 @@ cron.schedule("* * * * *", async () => {
     console.log("Scheduled scraping result:", result);
   } catch (error) {
     console.error("Scheduled scraping failed:", error);
+  }
+});
+
+// Daily cron - scrape YouTube videos every day at 14:00 (2 PM) server time.
+// This mirrors the GET /api/youtube/scrape endpoint.
+cron.schedule("0 14 * * *", async () => {
+  try {
+    console.log(
+      "🎬 Running daily YouTube scrape job (2 PM) at:",
+      new Date().toLocaleString(),
+    );
+    const result = await scrapeAllChannels();
+    console.log("Daily 2 PM scraping result:", result);
+  } catch (error) {
+    console.error("Daily 2 PM scraping failed:", error);
   }
 });
 
