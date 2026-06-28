@@ -9,6 +9,7 @@ import {
   uploadImageUrlToCloudinary,
   uploadImageFileToCloudinary,
 } from "./cloudinary.service.js";
+import { withImageRestrictions } from "../constants/imagePromptRules.js";
 
 dotenv.config();
 
@@ -238,7 +239,7 @@ class BlogFromSheetService {
 
       const response = await this.openai.images.generate({
         model: "gpt-image-1",
-        prompt,
+        prompt: withImageRestrictions(prompt),
         n: 1,
         size: "1024x1024",
       });

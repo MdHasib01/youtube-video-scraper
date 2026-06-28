@@ -10,6 +10,7 @@ import { BlogPost } from "./src/models/BlogPost.model.js";
 import dotenv from "dotenv";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import { withImageRestrictions } from "./src/constants/imagePromptRules.js";
 
 dotenv.config();
 
@@ -230,7 +231,7 @@ async function generateBlogImage(title, summary, videoId) {
 
     const response = await openai.images.generate({
       model: "gpt-image-1",
-      prompt: prompt,
+      prompt: withImageRestrictions(prompt),
       size: "1024x1024",
       n: 1,
     });

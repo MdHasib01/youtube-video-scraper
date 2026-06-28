@@ -6,6 +6,7 @@ import OpenAI from "openai";
 import dotenv from "dotenv";
 import { featuredPodcastData } from "../utils/data.js";
 import { uploadImageUrlToCloudinary } from "../services/cloudinary.service.js";
+import { withImageRestrictions } from "../constants/imagePromptRules.js";
 
 dotenv.config();
 
@@ -359,7 +360,7 @@ async function generateAndUploadCoverImage(video) {
     );
     return openai.images.generate({
       model: "gpt-image-1",
-      prompt,
+      prompt: withImageRestrictions(prompt),
       n: 1,
       size: "1024x1024",
       moderation: "low",

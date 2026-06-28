@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { uploadImageUrlToCloudinary } from "../services/cloudinary.service.js";
+import { withImageRestrictions } from "../constants/imagePromptRules.js";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -331,7 +332,7 @@ Theme Ideas:
 
     const response = await openai.images.generate({
       model: "gpt-image-1",
-      prompt: imagePrompt,
+      prompt: withImageRestrictions(imagePrompt),
       n: 1,
       size,
     });
